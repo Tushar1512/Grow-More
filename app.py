@@ -29,7 +29,6 @@ def get_working_model():
     print("------------------------------------------------")
     print("🔄 Contacting Google to find a working model...")
     try:
-    try:
         # Check available models
         model_names = [m.name for m in genai.list_models()]
         
