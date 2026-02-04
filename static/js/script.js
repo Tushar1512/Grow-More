@@ -573,7 +573,26 @@ window.addNewSkill = async () => {
 window.openRemoveModal = () => { const list = document.getElementById('removeListContainer'); if (!window.userSkills || window.userSkills.length === 0) return alert("No skills."); list.innerHTML = window.userSkills.map(s => `<div class="list-group-item list-group-item-dark d-flex justify-content-between align-items-center mb-2 rounded border-0"><span>${s.name}</span><button class="btn btn-sm btn-danger rounded-circle" onclick="deleteSkill('${s.name}')"><i class="fas fa-trash"></i></button></div>`).join(''); new bootstrap.Modal(document.getElementById('removeSkillModal')).show(); };
 window.deleteSkill = async (n) => { if (!confirm("Delete?")) return; const newS = window.userSkills.filter(s => s.name !== n); await updateDoc(doc(db, "users", auth.currentUser.uid), { skills: newS }); bootstrap.Modal.getInstance(document.getElementById('removeSkillModal')).hide(); loadUserData(auth.currentUser.uid); };
 window.downloadReport = () => { const text = document.getElementById('reportText').value; if (!text) return alert("Empty!"); const now = new Date(); const header = `Date(${now.getDate()}-${now.getMonth() + 1}-${now.getFullYear()})--Time(${now.toLocaleTimeString()})\n----------------\n\n`; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([header + text], { type: 'text/plain' })); a.download = `Report_${now.getDate()}.txt`; document.body.appendChild(a); a.click(); document.body.removeChild(a); };
-window.saveNewLink = async () => { const t = document.getElementById('linkTitleInput').value; const u = document.getElementById('linkUrlInput').value; if (!t || !u) return alert("Please enter both title and URL"); await updateDoc(doc(db, "users", auth.currentUser.uid), { resources: arrayUnion({ title: t, url: u }) }); bootstrap.Modal.getInstance(document.getElementById('addLinkModal')).hide(); document.getElementById('linkTitleInput').value = ""; document.getElementById('linkUrlInput').value = ""; loadUserData(auth.currentUser.uid); };
+window.saveNewLink = async () => {
+    const t = document.getElementById('linkTitleInput').value;
+    let u = document.getElementById('linkUrlInput').value;
+    if (!t || !u) return alert("Please enter both title and URL");
+
+    if (!u.match(/^https?:\/\//i)) {
+        u = 'https://' + u;
+    }
+
+    try {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { resources: arrayUnion({ title: t, url: u }) });
+        bootstrap.Modal.getInstance(document.getElementById('addLinkModal')).hide();
+        document.getElementById('linkTitleInput').value = "";
+        document.getElementById('linkUrlInput').value = "";
+        loadUserData(auth.currentUser.uid);
+    } catch (e) {
+        console.error("Link Save Error:", e);
+        alert("Failed to save link. Please try again.");
+    }
+};
 window.deleteLink = async (title, url) => { if (!confirm(`Are you sure you want to remove "${title}"?`)) return; const user = auth.currentUser; if (user) { try { await updateDoc(doc(db, "users", user.uid), { resources: arrayRemove({ title: title, url: url }) }); loadUserData(user.uid); } catch (e) { console.error("Error deleting link:", e); alert("Could not delete link. Please try again."); } } };
 window.openLinkModal = () => new bootstrap.Modal(document.getElementById('addLinkModal')).show();
 function loadLibraryUI(res) { const list = document.getElementById('libraryList'); list.innerHTML = ""; if (res && res.length > 0) { res.forEach(r => { list.innerHTML += `<li class="list-group-item list-group-item-dark d-flex justify-content-between align-items-center"><a href="${r.url}" target="_blank" class="text-info text-decoration-none text-truncate" style="max-width: 80%;"><i class="fas fa-link me-2"></i>${r.title}</a><button class="btn btn-sm btn-outline-danger border-0" onclick="deleteLink('${r.title}', '${r.url}')"><i class="fas fa-trash"></i></button></li>`; }); } else { list.innerHTML = "<li class='text-secondary text-center py-3'>No saved resources yet.</li>"; } }
