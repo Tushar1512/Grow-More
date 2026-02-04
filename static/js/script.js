@@ -656,14 +656,22 @@ window.askAI = async () => {
     try {
         const r = await fetch('/ask_ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: q }) });
         const d = await r.json();
+
         loading.style.display = 'none';
         const aiMsg = document.createElement('div'); aiMsg.className = 'chat-bubble chat-ai';
-        aiMsg.innerHTML = `<div class="d-flex align-items-center mb-1 text-primary"><span class="me-2 fs-5">🕉️</span> <strong>Veda</strong></div>${converter.makeHtml(d.reply)}`;
+
+        if (r.ok) {
+            aiMsg.innerHTML = `<div class="d-flex align-items-center mb-1 text-primary"><span class="me-2 fs-5">🕉️</span> <strong>Veda</strong></div>${converter.makeHtml(d.reply)}`;
+        } else {
+            // Show Backend Error (JSON)
+            aiMsg.innerHTML = `<div class="text-danger mb-1"><i class="fas fa-exclamation-triangle me-2"></i><strong>Error</strong></div>${d.reply || 'Unknown Server Error'}`;
+        }
         chat.insertBefore(aiMsg, loading);
+
     } catch (e) {
         loading.style.display = 'none';
         const err = document.createElement('div'); err.className = 'chat-bubble chat-ai';
-        err.innerHTML = `<div class="text-danger mb-1"><i class="fas fa-wifi me-2"></i><strong>Offline</strong></div>I am currently offline. Please check your connection.`;
+        err.innerHTML = `<div class="text-danger mb-1"><i class="fas fa-wifi me-2"></i><strong>Connection Error</strong></div>${e.message || 'Check network/console.'}`;
         chat.insertBefore(err, loading);
     }
     chat.scrollTop = chat.scrollHeight;
