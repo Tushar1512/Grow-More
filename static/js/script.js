@@ -622,7 +622,14 @@ function loadLibraryUI(res) {
             if (!fullUrl.match(/^https?:\/\//i)) {
                 fullUrl = 'https://' + fullUrl;
             }
-            list.innerHTML += `<li class="list-group-item bg-transparent border-bottom border-secondary d-flex justify-content-between align-items-center py-3"><a href="${fullUrl}" target="_blank" class="text-decoration-none text-truncate fw-bold" style="max-width: 80%; color: var(--accent);"><i class="fas fa-link me-2"></i>${r.title}</a><button class="btn btn-sm btn-outline-danger border-0" onclick="deleteLink('${r.title}', '${r.url}')"><i class="fas fa-trash"></i></button></li>`;
+            list.innerHTML += `<li class="list-group-item border-0 d-flex justify-content-between align-items-center py-3 mb-1 rounded" style="background: rgba(255, 255, 255, 0.05);">
+                <a href="${fullUrl}" target="_blank" class="text-decoration-none text-truncate fw-bold text-white" style="max-width: 80%;">
+                    <i class="fas fa-link me-2 text-info"></i>${r.title}
+                </a>
+                <button class="btn btn-sm btn-outline-danger border-0" onclick="deleteLink('${r.title}', '${r.url}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </li>`;
         });
     } else {
         list.innerHTML = "<li class='text-secondary text-center py-3'>No saved resources yet.</li>";
