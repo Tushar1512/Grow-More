@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-import google.generativeai as genai
+import requests
 import socket
 import os
 from dotenv import load_dotenv
@@ -9,36 +9,35 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# --- CONFIGURATION ---
-API_KEY = os.getenv("GOOGLE_API_KEY")
+# --- DEEPSEEK CONFIG ---
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
 
-if not API_KEY:
-    print("⚠️ WARNING: Please connect youre admin.")
+def call_deepseek(prompt, system_prompt="You are Veda, a helpful AI engineering assistant."):
+    if not DEEPSEEK_API_KEY:
+        return "⚠️ DeepSeek API Key is missing. Please check .env file."
+    
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {DEEPSEEK_API_KEY}"
+    }
+    
+    data = {
+        "model": "deepseek-chat",
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": prompt}
+        ],
+        "stream": False
+    }
 
-genai.configure(api_key=API_KEY)
-
-
-# --- AUTO-DETECT MODEL FUNCTION ---
-def get_working_model():
-    print("------------------------------------------------")
-    print("🔄 Contacting Google to find a working model...")
     try:
-        # Check available models
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
-                if 'gemini' in m.name:
-                    print(f"✅ FOUND MODEL: {m.name}")
-                    return genai.GenerativeModel(m.name)
+        response = requests.post(DEEPSEEK_URL, headers=headers, json=data)
+        response.raise_for_status()
+        return response.json()['choices'][0]['message']['content']
     except Exception as e:
-        print(f"❌ Error listing models: {e}")
-
-    print("⚠️ Could not find a specific Gemini model. Trying default 'gemini-2.5-flash'.")
-    return genai.GenerativeModel('gemini-2.5-flash')
-
-
-# Initialize the model automatically
-active_model = get_working_model()
-
+        print(f"❌ DeepSeek Connection Error: {e}")
+        return f"AI is currently offline. Error: {str(e)}"
 
 @app.route('/')
 def index():
@@ -51,7 +50,6 @@ def index():
 
 @app.route('/ask_ai', methods=['POST'])
 def ask_ai():
-    global active_model
     try:
         data = request.json
         user_query = data.get('query')
@@ -59,27 +57,19 @@ def ask_ai():
         if not user_query:
             return jsonify({'reply': "Please ask something!"})
 
-        if not active_model:
-            active_model = get_working_model()
-
-        response = active_model.generate_content(user_query)
-        return jsonify({'reply': response.text})
+        reply = call_deepseek(user_query)
+        return jsonify({'reply': reply})
 
     except Exception as e:
         print(f"Server Error: {e}")
-        # Return the actual error to the user for debugging
         return jsonify({'reply': f"Error: {str(e)}"})
 
 @app.route('/generate_idea', methods=['POST'])
 def generate_idea():
-    global active_model
     try:
-        if not active_model:
-            active_model = get_working_model()
-            
-        prompt = "Generate a unique, creative, and practical engineering project idea (e.g., related to robotics, IoT, automation, or software) in one short sentence."
-        response = active_model.generate_content(prompt)
-        return jsonify({'reply': response.text})
+        prompt = "Generate a unique, creative, and practical engineering project idea (e.g., related to robotics, IoT, automation, or software) in one short sentence. Format: **Title**: Description."
+        reply = call_deepseek(prompt)
+        return jsonify({'reply': reply})
     except Exception as e:
         print(f"Idea Generation Error: {e}")
         return jsonify({'reply': "Could not generate idea."})
