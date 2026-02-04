@@ -58,8 +58,13 @@
 
     <div class="top-nav">
         <button class="menu-toggle me-3" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-        <span class="fw-bold fs-5">GROW MORE <small class="text-secondary fw-normal">| 2026</small></span>
+        <span class="fw-bold fs-5">GROW MORE <small class="text-secondary fw-normal">| 2026</small><small
+                class="text-white-50 ms-2" style="font-size:0.7rem">v3.1</small></span>
     </div>
+
+    <!-- ... (rest of the file) ... -->
+
+    <script type="module" src="{{ url_for('static', filename='js/script.js') }}?v=3"></script>
 
     <div class="sidebar" id="sidebar">
         <div class="d-flex justify-content-between align-items-center mb-4 px-2 d-lg-none">
@@ -534,7 +539,7 @@
         </div>
     </div>
 
-    <script type="module" src="{{ url_for('static', filename='js/script.js') }}?v=2"></script>
+    <script type="module" src="{{ url_for('static', filename='js/script.js') }}?v=3"></script>
 </body>
 
 </html>
