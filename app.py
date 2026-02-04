@@ -32,8 +32,8 @@ def get_working_model():
     except Exception as e:
         print(f"❌ Error listing models: {e}")
 
-    print("⚠️ Could not find a specific Gemini model. Trying default 'gemini-2.0-flash'.")
-    return genai.GenerativeModel('gemini-2.0-flash')
+    print("⚠️ Could not find a specific Gemini model. Trying default 'gemini-2.5-flash'.")
+    return genai.GenerativeModel('gemini-2.5-flash')
 
 
 # Initialize the model automatically
