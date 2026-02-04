@@ -13,7 +13,7 @@ app = Flask(__name__)
 API_KEY = os.getenv("GOOGLE_API_KEY")
 
 if not API_KEY:
-    print("⚠️ WARNING: GOOGLE_API_KEY not found in .env file.")
+    print("⚠️ WARNING: Please connect youre admin.")
 
 genai.configure(api_key=API_KEY)
 
@@ -32,8 +32,8 @@ def get_working_model():
     except Exception as e:
         print(f"❌ Error listing models: {e}")
 
-    print("⚠️ Could not find a specific Gemini model. Trying default 'gemini-pro'.")
-    return genai.GenerativeModel('gemini-pro')
+    print("⚠️ Could not find a specific Gemini model. Trying default 'gemini-2.0-flash'.")
+    return genai.GenerativeModel('gemini-2.0-flash')
 
 
 # Initialize the model automatically
@@ -67,7 +67,8 @@ def ask_ai():
 
     except Exception as e:
         print(f"Server Error: {e}")
-        return jsonify({'reply': "I am currently offline. (Error: API Key or Network Issue)"})
+        # Return the actual error to the user for debugging
+        return jsonify({'reply': f"Error: {str(e)}"})
 
 @app.route('/generate_idea', methods=['POST'])
 def generate_idea():
@@ -97,6 +98,18 @@ def get_local_ip():
         s.close()
     return IP
 
+
+
+# --- GLOBAL ERROR HANDLER ---
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Pass through HTTP errors
+    if isinstance(e,  Exception): 
+        # For API routes, we might want JSON, but user asked for specific text for "full website"
+        # We will return the text as requested for 500s/Crashes
+        pass
+    print(f"Server Error: {e}")
+    return "note: please connect admin", 500
 
 if __name__ == '__main__':
     local_ip = get_local_ip()

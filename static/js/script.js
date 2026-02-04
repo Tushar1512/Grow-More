@@ -169,20 +169,49 @@ function renderTaskList(d) {
 window.addTaskToDate = async () => {
     const txt = document.getElementById('taskInput').value, cat = document.getElementById('taskCategory').value, d = window.selectedDate;
     if (!txt) return;
+    if (!auth.currentUser) return alert("Please login to save tasks.");
+
+    // Optimistic UI Update
     if (!window.userTasks) window.userTasks = {};
     if (!window.userTasks[d]) window.userTasks[d] = [];
     if (!Array.isArray(window.userTasks[d])) window.userTasks[d] = [window.userTasks[d]];
+
+    // Backup current state for rollback
+    const backup = JSON.parse(JSON.stringify(window.userTasks));
+
     window.userTasks[d].push({ text: txt, cat: cat });
     renderTaskList(d); renderCalendar(); updateUpcoming(); updateExamCountdown();
     document.getElementById('taskInput').value = "";
-    await updateDoc(doc(db, "users", auth.currentUser.uid), { tasks: window.userTasks });
+
+    try {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { tasks: window.userTasks });
+    } catch (e) {
+        console.error("Error saving task:", e);
+        alert("Failed to save task. Please check your connection.");
+        // Rollback
+        window.userTasks = backup;
+        renderTaskList(d); renderCalendar(); updateUpcoming(); updateExamCountdown();
+    }
 };
 
 window.removeTaskFromDate = async (index) => {
+    if (!auth.currentUser) return alert("Please login.");
     const d = window.selectedDate; let tasks = window.userTasks[d]; if (!Array.isArray(tasks)) tasks = [tasks];
+
+    // Backup
+    const backup = JSON.parse(JSON.stringify(window.userTasks));
+
     tasks.splice(index, 1); if (tasks.length === 0) delete window.userTasks[d]; else window.userTasks[d] = tasks;
     renderTaskList(d); renderCalendar(); updateUpcoming(); updateExamCountdown();
-    await updateDoc(doc(db, "users", auth.currentUser.uid), { tasks: window.userTasks });
+
+    try {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { tasks: window.userTasks });
+    } catch (e) {
+        console.error("Error deleting task:", e);
+        alert("Failed to delete task.");
+        window.userTasks = backup;
+        renderTaskList(d); renderCalendar(); updateUpcoming(); updateExamCountdown();
+    }
 };
 
 function updateUpcoming() {
@@ -231,8 +260,11 @@ window.confirmAddKanbanTask = async () => {
     const col = document.getElementById('kanbanTargetCol').value;
 
     if (!text) return;
+    if (!auth.currentUser) return alert("Please login.");
 
     if (!window.kanbanData) window.kanbanData = { todo: [], doing: [], done: [] };
+    const backup = JSON.parse(JSON.stringify(window.kanbanData));
+
     window.kanbanData[col].push(text);
     renderKanbanBoard();
 
@@ -241,10 +273,20 @@ window.confirmAddKanbanTask = async () => {
     const modal = bootstrap.Modal.getInstance(modalEl);
     modal.hide();
 
-    await updateDoc(doc(db, "users", auth.currentUser.uid), { kanban: window.kanbanData });
+    try {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { kanban: window.kanbanData });
+    } catch (e) {
+        console.error("Kanban Save Error:", e);
+        alert("Failed to save project task.");
+        window.kanbanData = backup;
+        renderKanbanBoard();
+    }
 };
 
 window.moveKanbanItem = async (col, index, dir) => {
+    if (!auth.currentUser) return alert("Please login.");
+    const backup = JSON.parse(JSON.stringify(window.kanbanData));
+
     const item = window.kanbanData[col].splice(index, 1)[0];
     let targetCol = col;
     if (col === 'todo' && dir === 1) targetCol = 'doing';
@@ -254,7 +296,15 @@ window.moveKanbanItem = async (col, index, dir) => {
 
     window.kanbanData[targetCol].push(item);
     renderKanbanBoard();
-    await updateDoc(doc(db, "users", auth.currentUser.uid), { kanban: window.kanbanData });
+
+    try {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { kanban: window.kanbanData });
+    } catch (e) {
+        console.error("Move Error:", e);
+        alert("Failed to move item.");
+        window.kanbanData = backup;
+        renderKanbanBoard();
+    }
 };
 
 window.deleteKanbanItem = (col, index) => {
@@ -264,8 +314,11 @@ window.deleteKanbanItem = (col, index) => {
 };
 
 window.executeKanbanDelete = async () => {
+    if (!auth.currentUser) return alert("Please login.");
     const col = document.getElementById('deleteTargetCol').value;
     const index = parseInt(document.getElementById('deleteTargetIndex').value);
+
+    const backup = JSON.parse(JSON.stringify(window.kanbanData));
 
     window.kanbanData[col].splice(index, 1);
     renderKanbanBoard();
@@ -275,7 +328,14 @@ window.executeKanbanDelete = async () => {
     const modal = bootstrap.Modal.getInstance(modalEl);
     modal.hide();
 
-    await updateDoc(doc(db, "users", auth.currentUser.uid), { kanban: window.kanbanData });
+    try {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { kanban: window.kanbanData });
+    } catch (e) {
+        console.error("Delete Error:", e);
+        alert("Failed to delete item.");
+        window.kanbanData = backup;
+        renderKanbanBoard();
+    }
 };
 
 function renderKanbanBoard() {
@@ -354,6 +414,7 @@ window.addFormula = async () => {
     const n = document.getElementById('fName').value;
     const e = document.getElementById('fEq').value;
     if (!s || !n || !e) return alert("Fill all fields");
+    if (!auth.currentUser) return alert("Please login.");
 
     if (!window.formulas) window.formulas = [];
     window.formulas.push({ s: s, n: n, e: e });
@@ -361,7 +422,15 @@ window.addFormula = async () => {
     document.getElementById('fSubject').value = ""; document.getElementById('fName').value = ""; document.getElementById('fEq').value = "";
 
     renderFormulas();
-    await updateDoc(doc(db, "users", auth.currentUser.uid), { formulas: window.formulas });
+
+    try {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { formulas: window.formulas });
+    } catch (err) {
+        console.error("Formula Save Error:", err);
+        alert("Failed to save formula.");
+        window.formulas.pop(); // Basic rollback
+        renderFormulas();
+    }
 };
 
 window.renderFormulas = () => {
@@ -385,9 +454,20 @@ window.renderFormulas = () => {
 
 window.deleteFormula = async (i) => {
     if (!confirm("Delete?")) return;
+    if (!auth.currentUser) return alert("Please login.");
+
+    const backup = JSON.parse(JSON.stringify(window.formulas));
     window.formulas.splice(i, 1);
     renderFormulas();
-    await updateDoc(doc(db, "users", auth.currentUser.uid), { formulas: window.formulas });
+
+    try {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { formulas: window.formulas });
+    } catch (e) {
+        console.error("Formula Delete Error:", e);
+        alert("Failed to delete formula.");
+        window.formulas = backup;
+        renderFormulas();
+    }
 };
 
 // --- NEW: IDEA GENERATOR (BEST UI - AI CONNECTED) ---
