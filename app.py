@@ -15,7 +15,7 @@ DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
 
 def call_deepseek(prompt, system_prompt="You are Veda, a helpful AI engineering assistant."):
     if not DEEPSEEK_API_KEY:
-        return "⚠️ DeepSeek API Key is missing. Please check .env file."
+        return "⚠️ WORNING :- CONTACT TO ADMIN"
     
     headers = {
         "Content-Type": "application/json",
