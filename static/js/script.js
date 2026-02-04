@@ -57,6 +57,9 @@ async function loadUserData(uid) {
         // FORMULA LOAD
         window.formulas = data.formulas || [];
 
+        // HABITS LOAD
+        window.habits = data.habits || [];
+
         if (data.phone) document.getElementById('editPhone').value = data.phone;
 
         // SYNC: Load Theme and Scratchpad from Cloud
@@ -68,6 +71,21 @@ async function loadUserData(uid) {
         document.getElementById('userRank').innerText = rank;
         document.getElementById('xpText').innerText = `${xp} XP`;
         document.getElementById('xpFill').style.width = Math.min(xp, 100) + "%";
+
+        // Update profile name display and input
+        document.getElementById('profileNameDisplay').innerText = auth.currentUser.displayName || "User";
+        const editName = document.getElementById('editName');
+        if (editName) editName.value = auth.currentUser.displayName || "";
+
+        // Render Modules
+        renderCalendar();
+        updateUpcoming();
+        renderKanbanBoard();
+        updateExamCountdown();
+        renderFormulas();
+        initDailyQuote();
+        initScratchpad();
+        renderHabits(); // RENDER HABITS
 
         const cont = document.getElementById('skillContainer');
         if (window.userSkills.length === 0) cont.innerHTML = "<div class='text-center text-secondary w-100'>No skills yet.</div>";
@@ -115,22 +133,16 @@ async function loadUserData(uid) {
         }
         if (data.resources) loadLibraryUI(data.resources);
 
-        // Render Modules
-        renderCalendar();
-        updateUpcoming();
-        renderKanbanBoard();
-        updateExamCountdown();
-        renderFormulas(); // NEW
-        initDailyQuote(); // NEW
-        initScratchpad(); // NEW
     } else {
-        await setDoc(doc(db, "users", uid), { skills: [], tasks: {}, kanban: { todo: [], doing: [], done: [] }, formulas: [] });
+        await setDoc(doc(db, "users", uid), { skills: [], tasks: {}, kanban: { todo: [], doing: [], done: [] }, formulas: [], habits: [] });
         window.kanbanData = { todo: [], doing: [], done: [] };
         window.formulas = [];
+        window.habits = [];
         renderCalendar();
         renderKanbanBoard();
-        initDailyQuote(); // NEW
-        initScratchpad(); // NEW
+        initDailyQuote();
+        initScratchpad();
+        renderHabits();
     }
 }
 
@@ -155,6 +167,17 @@ window.renderCalendar = () => {
         const isToday = (d === today.getDate() && cMonth === today.getMonth() && cYear === today.getFullYear());
         let dotsHtml = `<div class="dots-container">`;
         tasks.slice(0, 3).forEach(t => { dotsHtml += `<div class="task-dot dot-${t.cat}"></div>`; });
+
+        // Add habit dots
+        if (window.habits) {
+            const currentDayDate = new Date(cYear, cMonth, d).toISOString().split('T')[0];
+            window.habits.forEach(h => {
+                if (h.history && h.history.includes(currentDayDate)) {
+                    dotsHtml += `<div class="habit-dot"></div>`;
+                }
+            });
+        }
+
         dotsHtml += `</div>`;
         grid.innerHTML += `<div class="cal-date ${isToday ? 'today' : ''}" onclick="openTask('${dateStr}')">${d} ${dotsHtml}</div>`;
     }
@@ -506,6 +529,118 @@ window.startTimer = () => {
     }, 1000);
 };
 window.resetTimer = () => { clearInterval(timerInt); timerInt = null; document.getElementById('timerInput').style.display = 'block'; document.getElementById('timerInput').value = ""; document.getElementById('timerCountdown').style.display = 'none'; document.getElementById('timerCountdown').innerText = "00:00"; document.getElementById('ringProgress').style.strokeDashoffset = 0; };
+
+// --- HABIT STREAKS LOGIC ---
+window.openHabitModal = () => new bootstrap.Modal(document.getElementById('habitModal')).show();
+
+window.addHabit = async () => {
+    const name = document.getElementById('habitNameInput').value;
+    const icon = document.getElementById('habitIconInput').value || '🔥';
+
+    if (!name) return alert("Name is required!");
+    if (!auth.currentUser) return alert("Login first!");
+
+    if (!window.habits) window.habits = [];
+    const newHabit = {
+        id: 'h_' + Date.now(),
+        name: name,
+        icon: icon,
+        streak: 0,
+        history: [] // Stores dates "YYYY-MM-DD"
+    };
+
+    window.habits.push(newHabit);
+    renderHabits();
+    bootstrap.Modal.getInstance(document.getElementById('habitModal')).hide();
+
+    try {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { habits: window.habits });
+    } catch (e) {
+        console.error("Habit Save Error:", e);
+        alert("Failed to save habit.");
+    }
+};
+
+window.renderHabits = () => {
+    const container = document.getElementById('habitContainer');
+    if (!container) return;
+
+    if (!window.habits || window.habits.length === 0) {
+        container.innerHTML = `<div class="col-12 text-center text-secondary py-3 small opacity-50">No habits yet. Start a streak!</div>`;
+        return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+
+    container.innerHTML = window.habits.map((h, i) => {
+        const isDoneToday = h.history.includes(today);
+        // Calculate Streak Display (Visual Logic)
+        // If done today, show current streak. If NOT done today, but done yesterday, show streak. Else 0?
+        // Actually simplistic: just show h.streak.
+        const fireClass = (h.streak > 0 && isDoneToday) ? 'active-streak' : '';
+        const btnClass = isDoneToday ? 'checked' : '';
+        const btnIcon = isDoneToday ? '<i class="fas fa-check"></i>' : '<i class="fas fa-check" style="opacity:0"></i>'; // Hidden check to keep size
+
+        return `
+        <div class="col-12 col-md-6">
+            <div class="habit-card ${fireClass}">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="streak-flame">${h.icon}</div>
+                    <div class="habit-meta">
+                        <div class="habit-name">${h.name}</div>
+                        <div class="habit-streak-count text-secondary"><i class="fas fa-fire-alt text-warning me-1 small"></i>${h.streak} Day Streak</div>
+                    </div>
+                </div>
+                <button class="check-btn ${btnClass}" onclick="checkInHabit(${i})">
+                    ${isDoneToday ? '<i class="fas fa-check"></i>' : ''}
+                </button>
+                <button class="btn btn-sm text-secondary position-absolute top-0 end-0 p-1" style="opacity:0.3" onclick="deleteHabit(${i})"><i class="fas fa-times"></i></button>
+            </div>
+        </div>`;
+    }).join('');
+};
+
+window.checkInHabit = async (index) => {
+    if (!auth.currentUser) return alert("Login first!");
+    const habit = window.habits[index];
+    const today = new Date().toISOString().split('T')[0];
+
+    if (habit.history.includes(today)) return; // Already done
+
+    // Logic: If last completed was yesterday, increment streak. Else reset to 1.
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    const yStr = yesterday.toISOString().split('T')[0];
+
+    if (habit.history.includes(yStr)) {
+        habit.streak += 1;
+    } else {
+        habit.streak = 1; // Reset or Start
+    }
+
+    habit.history.push(today);
+
+    // OPTIMISTIC UPDATE
+    renderHabits();
+    renderCalendar(); // Update dots on calendar
+
+    try {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { habits: window.habits });
+    } catch (e) {
+        console.error("Check-in Error:", e);
+        // Rollback (simplified)
+        habit.history.pop();
+        habit.streak = Math.max(0, habit.streak - 1); // rough rollback
+        renderHabits();
+        alert("Sync failed. Check connection.");
+    }
+};
+
+window.deleteHabit = async (index) => {
+    if (!confirm("Delete this habit streak?")) return;
+    window.habits.splice(index, 1);
+    renderHabits();
+    if (auth.currentUser) await updateDoc(doc(db, "users", auth.currentUser.uid), { habits: window.habits });
+};
 
 // --- AI ---
 const converter = new showdown.Converter();
