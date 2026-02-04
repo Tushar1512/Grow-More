@@ -59,6 +59,10 @@ async function loadUserData(uid) {
 
         if (data.phone) document.getElementById('editPhone').value = data.phone;
 
+        // SYNC: Load Theme and Scratchpad from Cloud
+        if (data.theme) setTheme(data.theme, false); // false = don't save back to cloud on load
+        if (data.scratchpad) document.getElementById('scratchpad').value = data.scratchpad;
+        if (data.daily_report) document.getElementById('reportText').value = data.daily_report;
         const xp = (window.userSkills.length * 10) + (Object.keys(window.userTasks).length * 2);
         let rank = "Novice"; if (xp > 30) rank = "Apprentice"; if (xp > 80) rank = "Builder"; if (xp > 150) rank = "Architect";
         document.getElementById('userRank').innerText = rank;
@@ -572,7 +576,21 @@ window.addNewSkill = async () => {
 
 window.openRemoveModal = () => { const list = document.getElementById('removeListContainer'); if (!window.userSkills || window.userSkills.length === 0) return alert("No skills."); list.innerHTML = window.userSkills.map(s => `<div class="list-group-item list-group-item-dark d-flex justify-content-between align-items-center mb-2 rounded border-0"><span>${s.name}</span><button class="btn btn-sm btn-danger rounded-circle" onclick="deleteSkill('${s.name}')"><i class="fas fa-trash"></i></button></div>`).join(''); new bootstrap.Modal(document.getElementById('removeSkillModal')).show(); };
 window.deleteSkill = async (n) => { if (!confirm("Delete?")) return; const newS = window.userSkills.filter(s => s.name !== n); await updateDoc(doc(db, "users", auth.currentUser.uid), { skills: newS }); bootstrap.Modal.getInstance(document.getElementById('removeSkillModal')).hide(); loadUserData(auth.currentUser.uid); };
+// Report Cloud Sync
+const syncReportToCloud = debounce(async (val) => {
+    if (auth.currentUser) {
+        try {
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { daily_report: val }, { merge: true });
+            console.log("Report synced to cloud.");
+        } catch (e) { console.error("Report Sync Error:", e); }
+    }
+}, 2000);
+
 window.downloadReport = () => { const text = document.getElementById('reportText').value; if (!text) return alert("Empty!"); const now = new Date(); const header = `Date(${now.getDate()}-${now.getMonth() + 1}-${now.getFullYear()})--Time(${now.toLocaleTimeString()})\n----------------\n\n`; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([header + text], { type: 'text/plain' })); a.download = `Report_${now.getDate()}.txt`; document.body.appendChild(a); a.click(); document.body.removeChild(a); };
+window.autoSaveReport = () => {
+    const val = document.getElementById('reportText').value;
+    syncReportToCloud(val);
+};
 window.saveNewLink = async () => {
     const t = document.getElementById('linkTitleInput').value;
     let u = document.getElementById('linkUrlInput').value;
@@ -630,8 +648,17 @@ window.openSkillModal = () => {
     if (!modal) modal = new bootstrap.Modal(el);
     modal.show();
 };
-window.setTheme = (t) => { document.body.setAttribute('data-theme', t); localStorage.setItem('theme', t); };
-if (localStorage.getItem('theme')) setTheme(localStorage.getItem('theme'));
+// --- THEME ---
+window.setTheme = (t, saveToCloud = true) => {
+    document.body.setAttribute('data-theme', t);
+    // We still keep local as a backup/cache for immediate load
+    localStorage.setItem('theme', t);
+
+    if (saveToCloud && auth.currentUser) {
+        updateDoc(doc(db, "users", auth.currentUser.uid), { theme: t }).catch(e => console.error("Theme Sync Error:", e));
+    }
+};
+if (localStorage.getItem('theme')) setTheme(localStorage.getItem('theme'), false);
 
 // --- NEW FEATURES: MOTIVATION & SCRATCHPAD ---
 const quotes = [
@@ -664,11 +691,39 @@ window.initDailyQuote = () => {
 };
 
 window.initScratchpad = () => {
+    // We rely on loadUserData for the cloud data, but can use local as placeholder
     const note = localStorage.getItem('scratchpadNote');
-    if (note) document.getElementById('scratchpad').value = note;
+    if (note && !document.getElementById('scratchpad').value) {
+        document.getElementById('scratchpad').value = note;
+    }
 };
+
+// Debounce Utility to prevent spamming Firestore
+function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
+    };
+}
+
+// Cloud Saving Function (Debounced)
+const syncScratchpadToCloud = debounce(async (val) => {
+    if (auth.currentUser) {
+        try {
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { scratchpad: val }, { merge: true });
+            console.log("Scratchpad synced to cloud.");
+        } catch (e) {
+            console.error("Scratchpad Sync Error:", e);
+        }
+    }
+}, 2000); // Wait 2 seconds after typing stops
 
 window.saveScratchpad = () => {
     const val = document.getElementById('scratchpad').value;
-    localStorage.setItem('scratchpadNote', val);
+    localStorage.setItem('scratchpadNote', val); // Instant local save
+
+    // Trigger Cloud Save
+    syncScratchpadToCloud(val);
 };
