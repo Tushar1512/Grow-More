@@ -39,8 +39,8 @@ def get_working_model():
     except Exception as e:
         print(f"❌ Error listing models: {e}")
 
-    print("⚠️ Could not find specific model. Trying default 'gemini-2.0-flash'.")
-    return genai.GenerativeModel('gemini-2.0-flash')
+    print("⚠️ Could not find specific model. Trying default 'gemini-2.5-flash'.")
+    return genai.GenerativeModel('gemini-2.5-flash')
 
 
 # Initialize the model automatically
@@ -108,13 +108,9 @@ def get_local_ip():
 # --- GLOBAL ERROR HANDLER ---
 @app.errorhandler(Exception)
 def handle_exception(e):
-    # Pass through HTTP errors
-    if isinstance(e,  Exception): 
-        # For API routes, we might want JSON, but user asked for specific text for "full website"
-        # We will return the text as requested for 500s/Crashes
-        pass
-    print(f"Server Error: {e}")
-    return "note: please connect admin", 500
+    print(f"CRITICAL APP ERROR: {e}")
+    # Return JSON so the frontend shows the real error instead of 'Offline'
+    return jsonify({'reply': f"🔥 Critical Error: {str(e)}"}), 200
 
 if __name__ == '__main__':
     local_ip = get_local_ip()
