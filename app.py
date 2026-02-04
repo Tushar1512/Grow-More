@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv()
+load_dotenv(override=True)
 
 app = Flask(__name__)
 
@@ -14,6 +14,9 @@ API_KEY = os.getenv("GOOGLE_API_KEY")
 
 if not API_KEY:
     print("⚠️ WARNING: Please connect admin.")
+    # Try one more reload just in case
+    load_dotenv(override=True)
+    API_KEY = os.getenv("GOOGLE_API_KEY")
 
 try:
     genai.configure(api_key=API_KEY)
@@ -29,14 +32,15 @@ def get_working_model():
         # Check available models
         for m in genai.list_models():
             if 'generateContent' in m.supported_generation_methods:
-                if 'gemini' in m.name:
+                # Prefer 2.0-flash as it is stable and fast
+                if 'gemini-2.0-flash' in m.name:
                     print(f"✅ FOUND MODEL: {m.name}")
                     return genai.GenerativeModel(m.name)
     except Exception as e:
         print(f"❌ Error listing models: {e}")
 
-    print("⚠️ Could not find a specific Gemini model. Trying default 'gemini-2.5-flash'.")
-    return genai.GenerativeModel('gemini-2.5-flash')
+    print("⚠️ Could not find specific model. Trying default 'gemini-2.0-flash'.")
+    return genai.GenerativeModel('gemini-2.0-flash')
 
 
 # Initialize the model automatically
