@@ -29,18 +29,27 @@ def get_working_model():
     print("------------------------------------------------")
     print("🔄 Contacting Google to find a working model...")
     try:
+    try:
         # Check available models
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
-                # Prefer 2.0-flash as 1.5 is not listed in user's account
-                if 'gemini-2.0-flash' in m.name:
-                    print(f"✅ FOUND MODEL: {m.name}")
-                    return genai.GenerativeModel(m.name)
+        model_names = [m.name for m in genai.list_models()]
+        
+        # Priority list for Free Tier (Avoids 2.0-flash which has 0 limit for some)
+        priorities = [
+            'models/gemini-2.5-flash',
+            'models/gemini-2.0-flash-lite-001',
+            'models/gemini-flash-latest'
+        ]
+        
+        for p in priorities:
+            if p in model_names:
+                print(f"✅ FOUND MODEL: {p}")
+                return genai.GenerativeModel(p)
+
     except Exception as e:
         print(f"❌ Error listing models: {e}")
 
-    print("⚠️ Could not find specific model. Trying default 'gemini-2.0-flash'.")
-    return genai.GenerativeModel('gemini-2.0-flash')
+    print("⚠️ Could not find specific preferred model. Trying default 'gemini-2.5-flash'.")
+    return genai.GenerativeModel('gemini-2.5-flash')
 
 
 # Initialize the model automatically
