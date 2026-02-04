@@ -595,7 +595,21 @@ window.saveNewLink = async () => {
 };
 window.deleteLink = async (title, url) => { if (!confirm(`Are you sure you want to remove "${title}"?`)) return; const user = auth.currentUser; if (user) { try { await updateDoc(doc(db, "users", user.uid), { resources: arrayRemove({ title: title, url: url }) }); loadUserData(user.uid); } catch (e) { console.error("Error deleting link:", e); alert("Could not delete link. Please try again."); } } };
 window.openLinkModal = () => new bootstrap.Modal(document.getElementById('addLinkModal')).show();
-function loadLibraryUI(res) { const list = document.getElementById('libraryList'); list.innerHTML = ""; if (res && res.length > 0) { res.forEach(r => { list.innerHTML += `<li class="list-group-item list-group-item-dark d-flex justify-content-between align-items-center"><a href="${r.url}" target="_blank" class="text-info text-decoration-none text-truncate" style="max-width: 80%;"><i class="fas fa-link me-2"></i>${r.title}</a><button class="btn btn-sm btn-outline-danger border-0" onclick="deleteLink('${r.title}', '${r.url}')"><i class="fas fa-trash"></i></button></li>`; }); } else { list.innerHTML = "<li class='text-secondary text-center py-3'>No saved resources yet.</li>"; } }
+function loadLibraryUI(res) {
+    const list = document.getElementById('libraryList');
+    list.innerHTML = "";
+    if (res && res.length > 0) {
+        res.forEach(r => {
+            let fullUrl = r.url;
+            if (!fullUrl.match(/^https?:\/\//i)) {
+                fullUrl = 'https://' + fullUrl;
+            }
+            list.innerHTML += `<li class="list-group-item list-group-item-dark d-flex justify-content-between align-items-center"><a href="${fullUrl}" target="_blank" class="text-info text-decoration-none text-truncate" style="max-width: 80%;"><i class="fas fa-link me-2"></i>${r.title}</a><button class="btn btn-sm btn-outline-danger border-0" onclick="deleteLink('${r.title}', '${r.url}')"><i class="fas fa-trash"></i></button></li>`;
+        });
+    } else {
+        list.innerHTML = "<li class='text-secondary text-center py-3'>No saved resources yet.</li>";
+    }
+}
 
 /* --- SIDEBAR TOGGLE --- */
 window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('toggled'); document.body.classList.toggle('sidebar-toggled'); };
