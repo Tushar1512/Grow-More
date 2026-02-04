@@ -451,7 +451,45 @@ window.askAI = async () => {
 }
 
 // --- UTILS ---
-window.addNewSkill = async () => { const n = document.getElementById('newSkillName').value, l = parseInt(document.getElementById('newSkillLevel').value); if (!n || isNaN(l)) return alert("Valid input needed"); await updateDoc(doc(db, "users", auth.currentUser.uid), { skills: arrayUnion({ name: n, level: l }) }); alert("Added!"); bootstrap.Modal.getInstance(document.getElementById('skillModal')).hide(); loadUserData(auth.currentUser.uid); };
+window.addNewSkill = async () => {
+    const nameInput = document.getElementById('newSkillName');
+    const levelInput = document.getElementById('newSkillLevel');
+    const n = nameInput.value;
+    const l = parseInt(levelInput.value);
+
+    if (!auth.currentUser) return alert("Please login to add skills.");
+    if (!n || isNaN(l) || l < 0 || l > 100) return alert("Please enter a valid name and level (0-100).");
+
+    const btn = document.querySelector('#skillModal button.btn-primary');
+    const originalText = btn.innerText;
+    btn.innerText = "Adding...";
+    btn.disabled = true;
+
+    try {
+        // Use setDoc with merge to ensure it works even if the doc is missing fields
+        await setDoc(doc(db, "users", auth.currentUser.uid), {
+            skills: arrayUnion({ name: n, level: l })
+        }, { merge: true });
+
+        // Reset inputs
+        nameInput.value = "";
+        levelInput.value = "";
+
+        // Close modal
+        const modalEl = document.getElementById('skillModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+
+        loadUserData(auth.currentUser.uid);
+    } catch (e) {
+        console.error("Error adding skill:", e);
+        alert("Error adding skill: " + e.message);
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
+};
+
 window.openRemoveModal = () => { const list = document.getElementById('removeListContainer'); if (!window.userSkills || window.userSkills.length === 0) return alert("No skills."); list.innerHTML = window.userSkills.map(s => `<div class="list-group-item list-group-item-dark d-flex justify-content-between align-items-center mb-2 rounded border-0"><span>${s.name}</span><button class="btn btn-sm btn-danger rounded-circle" onclick="deleteSkill('${s.name}')"><i class="fas fa-trash"></i></button></div>`).join(''); new bootstrap.Modal(document.getElementById('removeSkillModal')).show(); };
 window.deleteSkill = async (n) => { if (!confirm("Delete?")) return; const newS = window.userSkills.filter(s => s.name !== n); await updateDoc(doc(db, "users", auth.currentUser.uid), { skills: newS }); bootstrap.Modal.getInstance(document.getElementById('removeSkillModal')).hide(); loadUserData(auth.currentUser.uid); };
 window.downloadReport = () => { const text = document.getElementById('reportText').value; if (!text) return alert("Empty!"); const now = new Date(); const header = `Date(${now.getDate()}-${now.getMonth() + 1}-${now.getFullYear()})--Time(${now.toLocaleTimeString()})\n----------------\n\n`; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([header + text], { type: 'text/plain' })); a.download = `Report_${now.getDate()}.txt`; document.body.appendChild(a); a.click(); document.body.removeChild(a); };
@@ -472,7 +510,13 @@ window.showSection = (id, btn) => {
     if (id === 'projects') renderKanbanBoard();
     if (window.innerWidth < 992) document.getElementById('sidebar').classList.remove('toggled');
 };
-window.openSkillModal = () => new bootstrap.Modal(document.getElementById('skillModal')).show();
+
+window.openSkillModal = () => {
+    const el = document.getElementById('skillModal');
+    let modal = bootstrap.Modal.getInstance(el);
+    if (!modal) modal = new bootstrap.Modal(el);
+    modal.show();
+};
 window.setTheme = (t) => { document.body.setAttribute('data-theme', t); localStorage.setItem('theme', t); };
 if (localStorage.getItem('theme')) setTheme(localStorage.getItem('theme'));
 
