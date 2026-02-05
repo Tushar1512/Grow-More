@@ -188,7 +188,6 @@ body {
     border-radius: 16px;
     padding: 25px;
     backdrop-filter: blur(10px);
-    height: 100%;
 }
 
 .nav-btn {
@@ -420,6 +419,7 @@ input[type=number]::-webkit-outer-spin-button {
 
 input[type=number] {
     -moz-appearance: textfield !important;
+    appearance: textfield !important;
 }
 
 .timer-ring-container {
