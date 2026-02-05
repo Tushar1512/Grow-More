@@ -74,6 +74,19 @@ async function loadUserData(uid) {
                 setTheme(data.theme, false);
             }
 
+            // --- SYNC SKILLS (Real-time) ---
+            // If strictly deeper check is needed, we can do JSON.stringify compare, 
+            // but for now, checking length difference or if existing length > 0 is a good start.
+            // Better: Always sync if initial load is done to ensure other tabs update.
+            if (window.initialLoadDone && data.skills) {
+                // simple JSON compare to see if we need to re-render
+                if (JSON.stringify(window.userSkills) !== JSON.stringify(data.skills)) {
+                    window.userSkills = data.skills;
+                    loadSkillsUI();
+                    updateXP();
+                }
+            }
+
             // We can also sync other things here if needed, but for now focusing on Scratchpad
             // Initial Load Logic (Only run once or use data from snap)
             if (!window.initialLoadDone) {
@@ -109,12 +122,7 @@ function processUserData(data) {
     if (data.phone) document.getElementById('editPhone').value = data.phone;
     if (data.daily_report) document.getElementById('reportText').value = data.daily_report;
 
-    // XP Calculation
-    const xp = (window.userSkills.length * 10) + (Object.keys(window.userTasks).length * 2);
-    let rank = "Novice"; if (xp > 30) rank = "Apprentice"; if (xp > 80) rank = "Builder"; if (xp > 150) rank = "Architect";
-    document.getElementById('userRank').innerText = rank;
-    document.getElementById('xpText').innerText = `${xp} XP`;
-    document.getElementById('xpFill').style.width = Math.min(xp, 100) + "%";
+    updateXP();
 
     // Update profile
     document.getElementById('profileNameDisplay').innerText = auth.currentUser.displayName || "User";
@@ -132,6 +140,15 @@ function processUserData(data) {
     renderHabits();
     loadSkillsUI();
     if (data.resources) loadLibraryUI(data.resources);
+}
+
+function updateXP() {
+    // XP Calculation
+    const xp = (window.userSkills.length * 10) + (Object.keys(window.userTasks).length * 2);
+    let rank = "Novice"; if (xp > 30) rank = "Apprentice"; if (xp > 80) rank = "Builder"; if (xp > 150) rank = "Architect";
+    document.getElementById('userRank').innerText = rank;
+    document.getElementById('xpText').innerText = `${xp} XP`;
+    document.getElementById('xpFill').style.width = Math.min(xp, 100) + "%";
 }
 
 function loadSkillsUI() {
