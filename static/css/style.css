@@ -573,7 +573,7 @@ canvas {
 /* AI & PROMPT CHIPS */
 #ai {
     flex-direction: column;
-    height: 80vh;
+    height: calc(100vh - 140px);
     display: none;
 }
 
@@ -588,6 +588,7 @@ canvas {
     display: flex;
     flex-direction: column;
     gap: 15px;
+    scroll-behavior: smooth;
 }
 
 .chat-bubble {
@@ -620,6 +621,12 @@ canvas {
     flex-direction: column;
     gap: 10px;
     margin-top: auto;
+    position: sticky;
+    bottom: 0;
+    background: var(--sidebar-bg);
+    /* Use sidebar bg for solid contrast or card-bg */
+    z-index: 100;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .chip-container {

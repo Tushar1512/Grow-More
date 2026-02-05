@@ -20,10 +20,10 @@ try:
             if 'flash' in m.name:
                 found_flash = True
 
-    print("\nAttempting generation with 'gemini-1.5-flash'...")
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    print("\nAttempting generation with 'gemini-2.5-flash'...")
+    model = genai.GenerativeModel('gemini-2.5-flash')
     response = model.generate_content("Hello, are you working?")
     print(f"SUCCESS! Reply: {response.text}")
 
 except Exception as e:
-    print(f"\n❌ FAILED: {e}")
+    print(f"\n[FAILED]: {e}")
