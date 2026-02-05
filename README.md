@@ -1,6 +1,4 @@
-🌱 Grow More – Smart Productivity & Growth Platform
-
-  🔗 Live Demo: https://grow-more-abj8.onrender.com                                                     
+🌱 Grow More – Smart Productivity & Growth Platform                                                
   Grow More is a modern web application built to help students and self-learners organize goals, improve productivity, and grow consistently.                                    
   It combines goal tracking, habit building, project organization, and smart assistance into one simple and powerful platform.                                         
 
