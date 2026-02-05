@@ -16,4 +16,5 @@
   Grow More is designed for people who want real progress, not just planning.
   Whether you're a student, developer, or self-improver, this platform helps you stay focused, organized, and motivated every day.
 
-  
+  ![Uploading Screenshot 2026-02-05 134108.png…]()
+
