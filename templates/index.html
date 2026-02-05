@@ -135,12 +135,15 @@
                 <div class="col-12 col-lg-4">
                     <div class="card-custom h-100">
                         <h5 class="text-warning mb-1">Exam Countdown</h5>
-                        <div id="examCountdownDisplay" class="text-center py-4">
+                        <div id="examCountdownDisplay" class="text-center pt-4 pb-2">
                             <h1 class="fw-bold display-4 mb-0" id="daysToExam">--</h1>
                             <p class="text-secondary small">Days until next Exam</p>
-                            <div id="nextExamName" class="badge bg-danger bg-opacity-25 text-danger">No exams scheduled
-                            </div>
+                            <div id="nextExamName" class="badge bg-danger bg-opacity-25 text-danger mb-3">No exams
+                                scheduled</div>
                         </div>
+                        <ul id="upcomingExamsList"
+                            class="list-group list-group-flush px-2 small border-top border-secondary pt-2"
+                            style="border-color: rgba(255,255,255,0.1) !important;"></ul>
                     </div>
                 </div>
             </div>
@@ -162,7 +165,11 @@
                 </div>
                 <div class="col-12 col-md-6">
                     <div class="card-custom h-100">
-                        <h5 class="mb-2 text-info"><i class="fas fa-sticky-note me-2"></i>Quick Scratchpad</h5>
+                        <h5 class="mb-2 text-info">
+                            <i class="fas fa-sticky-note me-2"></i>Quick Scratchpad
+                            <small id="scratchpadStatus" class="ms-2 text-secondary"
+                                style="font-size: 0.6em; opacity: 0; transition: opacity 0.5s;">Saved</small>
+                        </h5>
                         <textarea id="scratchpad" class="form-control dark-input" rows="3"
                             placeholder="Jot down quick ideas..." oninput="saveScratchpad()"></textarea>
                     </div>

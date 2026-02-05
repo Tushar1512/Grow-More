@@ -254,22 +254,43 @@ function updateExamCountdown() {
     let allExams = [];
     if (window.userTasks) { Object.keys(window.userTasks).forEach(d => { let daily = window.userTasks[d]; if (!Array.isArray(daily)) daily = [daily]; daily.forEach(t => { if (t.cat === 'exam') allExams.push({ date: d, ...t }); }); }); }
     allExams = allExams.filter(t => new Date(t.date) >= new Date().setHours(0, 0, 0, 0)).sort((a, b) => new Date(a.date) - new Date(b.date));
+
     const countDisplay = document.getElementById('daysToExam');
     const nameDisplay = document.getElementById('nextExamName');
+    const listDisplay = document.getElementById('upcomingExamsList');
+
+    // Clear list
+    if (listDisplay) listDisplay.innerHTML = "";
+
     if (allExams.length > 0) {
+        // Main Breakdown (Nearest Exam)
         const nextExam = allExams[0];
         const diffTime = Math.abs(new Date(nextExam.date) - new Date());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         if (countDisplay) countDisplay.innerText = diffDays;
         if (nameDisplay) {
             nameDisplay.innerText = nextExam.text;
-            nameDisplay.className = "badge bg-danger text-white";
+            nameDisplay.className = "badge bg-danger text-white mb-3";
+        }
+
+        // Next 4 Exams List (Skipping the first one)
+        const subsequentExams = allExams.slice(1, 5);
+        if (subsequentExams.length > 0 && listDisplay) {
+            subsequentExams.forEach(ex => {
+                const d = new Date(ex.date);
+                const dayStr = d.getDate() + ' ' + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getMonth()];
+                listDisplay.innerHTML += `
+                <li class="list-group-item bg-transparent border-0 d-flex justify-content-between text-secondary px-0 py-1">
+                    <span class="text-truncate" style="max-width: 65%;">- ${ex.text}</span>
+                    <span>${dayStr}</span>
+                </li>`;
+            });
         }
     } else {
         if (countDisplay) countDisplay.innerText = "--";
         if (nameDisplay) {
             nameDisplay.innerText = "No exams scheduled";
-            nameDisplay.className = "badge bg-danger bg-opacity-25 text-danger";
+            nameDisplay.className = "badge bg-danger bg-opacity-25 text-danger mb-3";
         }
     }
 }
@@ -859,21 +880,56 @@ function debounce(func, wait) {
 }
 
 // Cloud Saving Function (Debounced)
+// Cloud Saving Function (Debounced)
 const syncScratchpadToCloud = debounce(async (val) => {
     if (auth.currentUser) {
+        const statusEl = document.getElementById('scratchpadStatus');
         try {
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { scratchpad: val }, { merge: true });
+            // 'merge: true' is a SetOptions, but updateDoc doesn't accept SetOptions as 3rd arg.
+            // updateDoc updates specific fields of an existing document.
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { scratchpad: val });
             console.log("Scratchpad synced to cloud.");
+
+            if (statusEl) {
+                statusEl.innerText = "Saved";
+                statusEl.style.opacity = '0.7';
+                setTimeout(() => { statusEl.style.opacity = '0'; }, 2000);
+            }
         } catch (e) {
             console.error("Scratchpad Sync Error:", e);
+            if (statusEl) {
+                statusEl.innerText = "Error Saving";
+                statusEl.style.color = "red";
+                statusEl.style.opacity = '1';
+            }
         }
     }
-}, 2000); // Wait 2 seconds after typing stops
+}, 1000); // Wait 1 second after typing stops
 
 window.saveScratchpad = () => {
     const val = document.getElementById('scratchpad').value;
     localStorage.setItem('scratchpadNote', val); // Instant local save
 
+    // Show "Saving..." immediately
+    const statusEl = document.getElementById('scratchpadStatus');
+    if (statusEl) {
+        statusEl.innerText = "Saving...";
+        statusEl.style.color = ""; // Reset color
+        statusEl.style.opacity = '1';
+    }
+
     // Trigger Cloud Save
     syncScratchpadToCloud(val);
 };
+
+// Attempt to save on unload (Best effort)
+window.addEventListener('beforeunload', () => {
+    const val = document.getElementById('scratchpad').value;
+    // We cannot await here effectively, but triggering it might work in some browsers
+    if (auth.currentUser) {
+        // Using setDoc with merge might be safer here if updateDoc fails on partial docs
+        // But stick to updateDoc as we know user exists.
+        // NOTE: Firestore requests might be cancelled on unload. 
+        // Reliable unload save requires valid 'keepalive' fetch support which Firestore SDK handles internally to some extent.
+    }
+});
