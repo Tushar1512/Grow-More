@@ -87,6 +87,14 @@ async function loadUserData(uid) {
                 }
             }
 
+            // --- SYNC RESOURCES (Real-time) ---
+            if (window.initialLoadDone && data.resources) {
+                if (JSON.stringify(window.userResources) !== JSON.stringify(data.resources)) {
+                    window.userResources = data.resources;
+                    loadLibraryUI(window.userResources);
+                }
+            }
+
             // We can also sync other things here if needed, but for now focusing on Scratchpad
             // Initial Load Logic (Only run once or use data from snap)
             if (!window.initialLoadDone) {
@@ -118,6 +126,7 @@ function processUserData(data) {
     if (!window.kanbanData.done) window.kanbanData.done = [];
     window.formulas = data.formulas || [];
     window.habits = data.habits || [];
+    window.userResources = data.resources || [];
 
     if (data.phone) document.getElementById('editPhone').value = data.phone;
     if (data.daily_report) document.getElementById('reportText').value = data.daily_report;
@@ -139,7 +148,7 @@ function processUserData(data) {
     initScratchpad();
     renderHabits();
     loadSkillsUI();
-    if (data.resources) loadLibraryUI(data.resources);
+    loadLibraryUI(window.userResources);
 }
 
 function updateXP() {
