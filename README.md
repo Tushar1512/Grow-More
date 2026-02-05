@@ -10,7 +10,7 @@
   📊 Progress Dashboard – Visualize growth and stay motivated
   🧠 Smart Assistant – Get help with ideas, learning, and problem-solving
   🔥 Focus & Productivity Tools – Stay consistent and disciplined
-  🎨 Clean & Responsive UI – Works smoothly on desktop and mobile
+  🎨 Clean & Responsive UI – Works smoothly on desktop and mobil    
 
 🚀 Why Use Grow More?
   Grow More is designed for people who want real progress, not just planning.
