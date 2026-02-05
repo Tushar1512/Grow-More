@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const app = initializeApp(window.FIREBASE_CONFIG);
 const auth = getAuth(app);
@@ -31,6 +31,8 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
+let snapshotUnsub = null; // Store unsubscribe function
+
 async function loadUserData(uid) {
     const todayStr = new Date().toDateString();
     const lastLogin = localStorage.getItem('lastLoginDate');
@@ -42,107 +44,138 @@ async function loadUserData(uid) {
     }
     document.getElementById('streakCount').innerText = streak;
 
-    const snap = await getDoc(doc(db, "users", uid));
-    if (snap.exists()) {
-        const data = snap.data();
-        window.userTasks = data.tasks || {};
-        window.userSkills = data.skills || [];
+    // REAL-TIME LISTENER
+    if (snapshotUnsub) snapshotUnsub(); // Unsubscribe previous if exists
 
-        // KANBAN LOAD (Ensure structure exists)
-        window.kanbanData = data.kanban || { todo: [], doing: [], done: [] };
-        if (!window.kanbanData.todo) window.kanbanData.todo = [];
-        if (!window.kanbanData.doing) window.kanbanData.doing = [];
-        if (!window.kanbanData.done) window.kanbanData.done = [];
+    snapshotUnsub = onSnapshot(doc(db, "users", uid), (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
 
-        // FORMULA LOAD
-        window.formulas = data.formulas || [];
+            // --- SYNC SCRATCHPAD (Real-time) ---
+            const scratchpad = document.getElementById('scratchpad');
+            if (scratchpad && data.scratchpad !== undefined) {
+                // Only update if value is different AND user is NOT currently typing in it
+                if (scratchpad.value !== data.scratchpad && document.activeElement !== scratchpad) {
+                    scratchpad.value = data.scratchpad;
+                    localStorage.setItem('scratchpadNote', data.scratchpad);
+                    // Visual indicator that it updated from cloud
+                    const statusEl = document.getElementById('scratchpadStatus');
+                    if (statusEl) {
+                        statusEl.innerText = "Synced";
+                        statusEl.style.opacity = '1';
+                        statusEl.style.color = '#10b981'; // Green
+                        setTimeout(() => { statusEl.style.opacity = '0'; statusEl.style.color = ''; }, 2000);
+                    }
+                }
+            }
 
-        // HABITS LOAD
-        window.habits = data.habits || [];
+            // --- SYNC THEME ---
+            if (data.theme && document.body.getAttribute('data-theme') !== data.theme) {
+                setTheme(data.theme, false);
+            }
 
-        if (data.phone) document.getElementById('editPhone').value = data.phone;
-
-        // SYNC: Load Theme and Scratchpad from Cloud
-        if (data.theme) setTheme(data.theme, false); // false = don't save back to cloud on load
-        if (data.scratchpad) document.getElementById('scratchpad').value = data.scratchpad;
-        if (data.daily_report) document.getElementById('reportText').value = data.daily_report;
-        const xp = (window.userSkills.length * 10) + (Object.keys(window.userTasks).length * 2);
-        let rank = "Novice"; if (xp > 30) rank = "Apprentice"; if (xp > 80) rank = "Builder"; if (xp > 150) rank = "Architect";
-        document.getElementById('userRank').innerText = rank;
-        document.getElementById('xpText').innerText = `${xp} XP`;
-        document.getElementById('xpFill').style.width = Math.min(xp, 100) + "%";
-
-        // Update profile name display and input
-        document.getElementById('profileNameDisplay').innerText = auth.currentUser.displayName || "User";
-        const editName = document.getElementById('editName');
-        if (editName) editName.value = auth.currentUser.displayName || "";
-
-        // Render Modules
-        renderCalendar();
-        updateUpcoming();
-        renderKanbanBoard();
-        updateExamCountdown();
-        renderFormulas();
-        initDailyQuote();
-        initScratchpad();
-        renderHabits(); // RENDER HABITS
-
-        const cont = document.getElementById('skillContainer');
-        if (window.userSkills.length === 0) cont.innerHTML = "<div class='text-center text-secondary w-100'>No skills yet.</div>";
-        else {
-            cont.innerHTML = window.userSkills.map(s => {
-                let icon = "fa-bolt";
-                let n = s.name.toLowerCase();
-                let colorClass = "bg-primary";
-
-                // Smart Icon Selection
-                if (n.includes("python")) icon = "fa-python";
-                else if (n.includes("js") || n.includes("script")) icon = "fa-js";
-                else if (n.includes("html")) icon = "fa-html5";
-                else if (n.includes("css")) icon = "fa-css3-alt";
-                else if (n.includes("react")) icon = "fa-react";
-                else if (n.includes("node")) icon = "fa-node";
-                else if (n.includes("db") || n.includes("data")) icon = "fa-database";
-                else if (n.includes("robot") || n.includes("ros")) icon = "fa-robot";
-                else if (n.includes("design") || n.includes("ui")) icon = "fa-pen-nib";
-                else if (n.includes("code")) icon = "fa-code";
-
-                // Proficiency Color Coding
-                if (s.level < 40) colorClass = "bg-danger";
-                else if (s.level < 75) colorClass = "bg-warning";
-                else colorClass = "bg-success";
-
-                return `
-                <div class="col-6 col-lg-4">
-                    <div class="skill-card">
-                        <button class="skill-delete-btn" onclick="deleteSkill('${s.name}')"><i class="fas fa-trash"></i></button>
-                        <div class="skill-icon-container">
-                            <i class="fab ${icon} skill-icon"></i>
-                        </div>
-                        <h6 class="fw-bold mb-1">${s.name}</h6>
-                        <div class="d-flex justify-content-between small text-secondary mb-2">
-                            <span>Proficiency</span>
-                            <span>${s.level}%</span>
-                        </div>
-                        <div class="progress" style="height:6px; background:rgba(255,255,255,0.05); border-radius:10px;">
-                            <div class="progress-bar ${colorClass}" style="width:${s.level}%; border-radius:10px; transition: width 1s ease;"></div>
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
+            // We can also sync other things here if needed, but for now focusing on Scratchpad
+            // Initial Load Logic (Only run once or use data from snap)
+            if (!window.initialLoadDone) {
+                processUserData(data);
+                window.initialLoadDone = true;
+            }
+        } else {
+            // First time user?
+            setDoc(doc(db, "users", uid), { skills: [], tasks: {}, kanban: { todo: [], doing: [], done: [] }, formulas: [], habits: [] });
+            window.kanbanData = { todo: [], doing: [], done: [] };
+            window.formulas = [];
+            window.habits = [];
+            renderCalendar();
+            renderKanbanBoard();
+            initDailyQuote();
+            initScratchpad();
+            renderHabits();
         }
-        if (data.resources) loadLibraryUI(data.resources);
+    });
 
+}
+
+function processUserData(data) {
+    window.userTasks = data.tasks || {};
+    window.userSkills = data.skills || [];
+    window.kanbanData = data.kanban || { todo: [], doing: [], done: [] };
+    if (!window.kanbanData.todo) window.kanbanData.todo = [];
+    if (!window.kanbanData.doing) window.kanbanData.doing = [];
+    if (!window.kanbanData.done) window.kanbanData.done = [];
+    window.formulas = data.formulas || [];
+    window.habits = data.habits || [];
+
+    if (data.phone) document.getElementById('editPhone').value = data.phone;
+    if (data.daily_report) document.getElementById('reportText').value = data.daily_report;
+
+    // XP Calculation
+    const xp = (window.userSkills.length * 10) + (Object.keys(window.userTasks).length * 2);
+    let rank = "Novice"; if (xp > 30) rank = "Apprentice"; if (xp > 80) rank = "Builder"; if (xp > 150) rank = "Architect";
+    document.getElementById('userRank').innerText = rank;
+    document.getElementById('xpText').innerText = `${xp} XP`;
+    document.getElementById('xpFill').style.width = Math.min(xp, 100) + "%";
+
+    // Update profile
+    document.getElementById('profileNameDisplay').innerText = auth.currentUser.displayName || "User";
+    const editName = document.getElementById('editName');
+    if (editName) editName.value = auth.currentUser.displayName || "";
+
+    // Render Modules
+    renderCalendar();
+    updateUpcoming();
+    renderKanbanBoard();
+    updateExamCountdown();
+    renderFormulas();
+    initDailyQuote();
+    initScratchpad();
+    renderHabits();
+    loadSkillsUI();
+    if (data.resources) loadLibraryUI(data.resources);
+}
+
+function loadSkillsUI() {
+    const cont = document.getElementById('skillContainer');
+    if (window.userSkills.length === 0) {
+        cont.innerHTML = "<div class='text-center text-secondary w-100'>No skills yet.</div>";
     } else {
-        await setDoc(doc(db, "users", uid), { skills: [], tasks: {}, kanban: { todo: [], doing: [], done: [] }, formulas: [], habits: [] });
-        window.kanbanData = { todo: [], doing: [], done: [] };
-        window.formulas = [];
-        window.habits = [];
-        renderCalendar();
-        renderKanbanBoard();
-        initDailyQuote();
-        initScratchpad();
-        renderHabits();
+        cont.innerHTML = window.userSkills.map(s => {
+            let icon = "fa-bolt";
+            let n = s.name.toLowerCase();
+            let colorClass = "bg-primary";
+            // Smart Icon Selection
+            if (n.includes("python")) icon = "fa-python";
+            else if (n.includes("js") || n.includes("script")) icon = "fa-js";
+            else if (n.includes("html")) icon = "fa-html5";
+            else if (n.includes("css")) icon = "fa-css3-alt";
+            else if (n.includes("react")) icon = "fa-react";
+            else if (n.includes("node")) icon = "fa-node";
+            else if (n.includes("db") || n.includes("data")) icon = "fa-database";
+            else if (n.includes("robot") || n.includes("ros")) icon = "fa-robot";
+            else if (n.includes("design") || n.includes("ui")) icon = "fa-pen-nib";
+            else if (n.includes("code")) icon = "fa-code";
+            // Proficiency Color Coding
+            if (s.level < 40) colorClass = "bg-danger";
+            else if (s.level < 75) colorClass = "bg-warning";
+            else colorClass = "bg-success";
+            return `
+            <div class="col-6 col-lg-4">
+                <div class="skill-card">
+                    <button class="skill-delete-btn" onclick="deleteSkill('${s.name}')"><i class="fas fa-trash"></i></button>
+                    <div class="skill-icon-container">
+                        <i class="fab ${icon} skill-icon"></i>
+                    </div>
+                    <h6 class="fw-bold mb-1">${s.name}</h6>
+                    <div class="d-flex justify-content-between small text-secondary mb-2">
+                        <span>Proficiency</span>
+                        <span>${s.level}%</span>
+                    </div>
+                    <div class="progress" style="height:6px; background:rgba(255,255,255,0.05); border-radius:10px;">
+                        <div class="progress-bar ${colorClass}" style="width:${s.level}%; border-radius:10px; transition: width 1s ease;"></div>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
     }
 }
 
