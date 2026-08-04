@@ -1,0 +1,25 @@
+[build]
+  publish = "frontend"
+
+# Proxies all backend API calls to the Render server.
+# The user can deploy the exact same repo to Netlify, and it will serve
+# the frontend statically and route backend APIs to their Render app.
+# Note: replace the "to" URL below with the actual Render deployment URL.
+
+[[redirects]]
+  from = "/ask_ai"
+  to = "https://grow-more-backend.onrender.com/ask_ai"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/config"
+  to = "https://grow-more-backend.onrender.com/api/config"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/generate_idea"
+  to = "https://grow-more-backend.onrender.com/generate_idea"
+  status = 200
+  force = true

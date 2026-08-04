@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Grow More | Mechatronics Hub</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+    <style>
+        /* --- THEMES --- */
+        :root,
+        [data-theme="sea"] {
+            --bg-gradient: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+            --sidebar-bg: #030712;
+            --card-bg: rgba(30, 41, 59, 0.6);
+            --text: #f8fafc;
+            --accent: #3b82f6;
+        }
+
+        [data-theme="carbon"] {
+            --bg-gradient: linear-gradient(135deg, #18181b 0%, #09090b 100%);
+            --sidebar-bg: #000000;
+            --card-bg: rgba(39, 39, 42, 0.6);
+            --text: #e4e4e7;
+            --accent: #10b981;
+        }
+
+        [data-theme="amethyst"] {
+            --bg-gradient: radial-gradient(circle at top, #2e1065 0%, #000000 100%);
+            --sidebar-bg: #1e1b4b;
+            --card-bg: rgba(49, 46, 129, 0.4);
+            --text: #e0e7ff;
+            --accent: #a855f7;
+        }
+
+        [data-theme="crimson"] {
+            --bg-gradient: linear-gradient(to bottom, #450a0a, #000000);
+            --sidebar-bg: #280505;
+            --card-bg: rgba(127, 29, 29, 0.2);
+            --text: #ffe4e6;
+            --accent: #f43f5e;
+        }
+
+        [data-theme="aurora"] {
+            --bg-gradient: linear-gradient(45deg, #0f172a, #0e7490);
+            --sidebar-bg: #020617;
+            --card-bg: rgba(15, 23, 42, 0.7);
+            --text: #ecfeff;
+            --accent: #22d3ee;
+        }
+
+        body {
+            background: #020617;
+            background-image: var(--bg-gradient);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+            transition: background-image 0.5s ease;
+        }
+
+        /* --- LAYOUT --- */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 0;
+            height: 60px;
+            background: var(--sidebar-bg);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 1000;
+        }
+
+        .sidebar {
+            height: 100vh;
+            background: var(--sidebar-bg);
+            padding: 80px 20px 20px 20px;
+            position: fixed;
+            width: 260px;
+            top: 0;
+            left: 0;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 900;
+            transition: transform 0.3s ease;
+        }
+
+        .main {
+            margin-top: 60px;
+            padding: 30px;
+            transition: margin-left 0.3s ease;
+            min-height: calc(100vh - 60px);
+        }
+
+        @media (min-width: 992px) {
+            .sidebar {
+                transform: translateX(0);
+            }
+
+            .main {
+                margin-left: 260px;
+            }
+
+            .menu-toggle {
+                display: block;
+                margin-right: 20px;
+            }
+
+            .sidebar.toggled {
+                transform: translateX(-100%);
+            }
+
+            body.sidebar-toggled .main {
+                margin-left: 0;
+            }
+
+            .dashboard-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 2rem;
+            }
+
+            .dashboard-header h1 {
+                font-size: 2.2rem;
+                margin: 0;
+            }
+        }
+
+        @media (max-width: 991.98px) {
+            .sidebar {
+                transform: translateX(-100%);
+                z-index: 2000;
+                box-shadow: 5px 0 15px rgba(0, 0, 0, 0.5);
+            }
+
+            .sidebar.toggled {
+                transform: translateX(0);
+            }
+
+            .main {
+                margin-left: 0;
+                padding: 15px;
+            }
+
+            .menu-toggle {
+                display: block;
+                margin-right: 15px;
+            }
+
+            .overlay-mask {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.6);
+                z-index: 1500;
+                backdrop-filter: blur(3px);
+            }
+
+            .sidebar.toggled~.overlay-mask {
+                display: block;
+            }
+
+            .dashboard-header {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+                margin-bottom: 1.5rem;
+            }
+
+            .dashboard-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .cal-date {
+                height: 45px !important;
+                font-size: 0.8rem !important;
+            }
+        }
+
+        .menu-toggle {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        .card-custom {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            height: 100%;
+        }
+
+        .nav-btn {
+            width: 100%;
+            text-align: left;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            border: none;
+            background: transparent;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-btn i {
+            width: 30px;
+            text-align: center;
+            margin-right: 10px;
+        }
+
+        .nav-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Calendar */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            margin-top: 15px;
+        }
+
+        .cal-date {
+            height: 60px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            position: relative;
+        }
+
+        .cal-date.today {
+            border: 2px solid var(--accent);
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .dots-container {
+            display: flex;
+            justify-content: center;
+            gap: 3px;
+            position: absolute;
+            bottom: 8px;
+            left: 0;
+            right: 0;
+        }
+
+        .task-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .dot-general {
+            background-color: #fbbf24;
+        }
+
+        .dot-exam {
+            background-color: #ef4444;
+        }
+
+        .dot-study {
+            background-color: #3b82f6;
+        }
+
+        .dot-project {
+            background-color: #10b981;
+        }
+
+        /* KANBAN BOARD */
+        .kanban-board {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            height: calc(100vh - 180px);
+        }
+
+        .kanban-col {
+            min-width: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .kanban-header {
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .kanban-items {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .kanban-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            animation: fadeIn 0.3s;
+        }
+
+        .kanban-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            pt-2;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .kb-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .kb-btn:hover {
+            color: white;
+        }
+
+        /* Timer UI */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none !important;
+            margin: 0 !important;
+        }
+
+        input[type=number] {
+            -moz-appearance: textfield !important;
+        }
+
+        .timer-ring-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin: 0 auto;
+        }
+
+        .timer-ring {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .ring-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.05);
+            stroke-width: 8;
+        }
+
+        .ring-progress {
+            fill: none;
+            stroke: var(--accent, #3b82f6);
+            stroke-width: 8;
+            stroke-linecap: round;
+            stroke-dasharray: 565;
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear;
+        }
+
+        .timer-display {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+        }
+
+        .display-time {
+            font-size: 3rem;
+            font-weight: 700;
+            font-family: monospace;
+            color: white;
+            line-height: 1;
+        }
+
+        .display-input {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 3rem;
+            font-weight: 700;
+            width: 120px;
+            text-align: center;
+            font-family: monospace;
+            outline: none;
+            padding: 0;
+            margin-bottom: 5px;
+            z-index: 100;
+        }
+
+        .timer-controls {
+            margin-top: -10px;
+            position: relative;
+            z-index: 30;
+        }
+
+        .btn-timer {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+            border: none;
+        }
+
+        .btn-play {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-stop {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* WHITEBOARD */
+        #whiteboard-container {
+            background: #fff;
+            border-radius: 16px;
+            height: calc(100vh - 180px);
+            overflow: hidden;
+            position: relative;
+            border: 2px solid #334155;
+        }
+
+        canvas {
+            cursor: crosshair;
+            display: block;
+        }
+
+        .whiteboard-toolbar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.9);
+            padding: 10px 20px;
+            border-radius: 50px;
+            display: flex;
+            gap: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .color-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .color-btn.active {
+            transform: scale(1.2);
+            border-color: var(--accent);
+        }
+
+        .tool-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .tool-btn:hover {
+            color: var(--accent);
+        }
+
+        /* AI & PROMPT CHIPS */
+        #ai {
+            flex-direction: column;
+            height: 80vh;
+            display: none;
+        }
+
+        #ai.active-section {
+            display: flex !important;
+        }
+
+        #chatBox {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .chat-bubble {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .chat-user {
+            background-color: var(--accent);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+        }
+
+        .chat-ai {
+            background-color: rgba(255, 255, 255, 0.08);
+            color: #e2e8f0;
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+        }
+
+        .ai-footer {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: auto;
+        }
+
+        .chip-container {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+            scrollbar-width: none;
+        }
+
+        .ai-chip {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: 0.2s;
+        }
+
+        .ai-chip:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .ai-input-container {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            padding: 6px 6px 6px 15px;
+        }
+
+        .ai-input-container input {
+            background: transparent;
+            border: none;
+            color: white;
+            flex-grow: 1;
+            outline: none;
+        }
+
+        .ai-send-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Auth */
+        #auth-overlay {
+            position: fixed;
+            inset: 0;
+            background: #020617;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .input-auth {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: white;
+            padding: 12px 15px;
+            border-radius: 12px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        #splash-screen {
+            position: fixed;
+            inset: 0;
+            background: #020617;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 5000;
+            transition: opacity 0.8s ease-out, visibility 0.8s;
+        }
+
+        #splash-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .splash-logo {
+            width: 150px;
+            animation: popInBounce 1.5s ease-out infinite alternate;
+            filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.5));
+        }
+
+        @keyframes popInBounce {
+            0% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Utils */
+        .section {
+            display: none;
+        }
+
+        .active-section {
+            display: block;
+            animation: fadeIn 0.4s;
+        }
+
+        .modal-content.dark-theme {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 20px;
+            color: white;
+        }
+
+        .form-control.dark-input {
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            color: white;
+            border-radius: 8px;
+        }
+
+        /* FORMULA CARD STYLES */
+        .formula-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .formula-card strong {
+            color: var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="splash-screen"><img src="logo.png" alt="Grow More" class="splash-logo"></div>
+
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <h1 class="auth-title fw-bold">Grow More</h1>
+            <p class="text-secondary small mb-4">Track progress, achieve goals</p>
+            <button
+                class="btn btn-light w-100 py-2 rounded-pill fw-bold mb-3 d-flex align-items-center justify-content-center"
+                onclick="loginGoogle()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" class="me-2">
+                Google Login
+            </button>
+            <div class="d-flex align-items-center mb-3">
+                <hr class="flex-grow-1 border-secondary"><span class="mx-2 text-secondary small">OR</span>
+                <hr class="flex-grow-1 border-secondary">
+            </div>
+            <input type="text" id="nameInput" class="input-auth" placeholder="Name (Sign Up Only)">
+            <input type="email" id="emailInput" class="input-auth" placeholder="Email">
+            <input type="password" id="passInput" class="input-auth" placeholder="Password">
+            <div class="d-flex gap-2 mt-3">
+                <button class="btn btn-primary w-100 rounded-pill" onclick="loginEmail()">Login</button>
+                <button class="btn btn-outline-secondary w-100 rounded-pill" onclick="registerEmail()">Sign Up</button>
+            </div>
+            <p id="authError" class="text-danger small mt-2 mb-0"></p>
+        </div>
+    </div>
+
+    <div class="top-nav">
+        <button class="menu-toggle me-3" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+        <span class="fw-bold fs-5">GROW MORE <small class="text-secondary fw-normal">| 2026</small></span>
+    </div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="d-flex justify-content-between align-items-center mb-4 px-2 d-lg-none">
+            <h4 class="fw-bold text-white m-0">Menu</h4>
+            <button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="d-flex flex-column gap-1">
+            <button class="nav-btn active" onclick="showSection('dashboard', this)"><i class="fas fa-chart-pie"></i>
+                Dashboard</button>
+            <button class="nav-btn" onclick="showSection('projects', this)"><i class="fas fa-tasks"></i> Project
+                Board</button>
+            <button class="nav-btn" onclick="showSection('whiteboard', this)"><i class="fas fa-pen-fancy"></i> Idea
+                Canvas</button>
+            <button class="nav-btn" onclick="showSection('report', this)"><i class="fas fa-file-alt"></i> Daily
+                Report</button>
+            <button class="nav-btn" onclick="showSection('cal', this)"><i class="fas fa-calendar-check"></i> Calendar &
+                Focus</button>
+            <button class="nav-btn" onclick="openFormulas()"><i class="fas fa-square-root-alt"></i> Formula Sheet <span
+                    class="badge bg-info text-dark ms-auto small">New</span></button>
+            <button class="nav-btn" onclick="openIdeaModal()"><i class="fas fa-lightbulb"></i> Idea Generator <span
+                    class="badge bg-warning text-dark ms-auto small">New</span></button>
+            <button class="nav-btn" onclick="showSection('ai', this)"><i class="fas fa-brain"></i> Veda AI</button>
+            <button class="nav-btn" onclick="showSection('profile', this)"><i class="fas fa-user"></i> Profile</button>
+            <button class="nav-btn" onclick="showSection('settings', this)"><i class="fas fa-cog"></i> Settings</button>
+        </div>
+        <div class="mt-auto pt-4"><button class="btn btn-outline-danger w-100 rounded-pill"
+                onclick="logout()">Logout</button></div>
+    </div>
+    <div class="overlay-mask" id="mask" onclick="toggleSidebar()"></div>
+
+    <div class="main">
+
+        <div id="dashboard" class="section active-section">
+            <div class="dashboard-header">
+                <div>
+                    <h1 id="welcomeName" class="fw-bold">Welcome</h1>
+                    <div class="d-flex align-items-center gap-2 mt-2">
+                        <span id="userRank"
+                            class="badge bg-secondary text-white-50 bg-opacity-25 border border-secondary">Novice</span>
+                        <span id="streakBadge"
+                            class="badge rounded-pill border border-warning text-warning bg-transparent">
+                            <i class="fas fa-fire me-1"></i> <span id="streakCount">0</span> Day Streak
+                        </span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm rounded-pill px-3" onclick="openRemoveModal()"
+                        style="border: 1px solid #ef4444; color: #ef4444; background: transparent;">- Remove</button>
+                    <button class="btn btn-primary btn-sm rounded-pill px-3" onclick="openSkillModal()">+ Skill</button>
+                </div>
+            </div>
+
+            <div class="card-custom mb-4 py-3 px-4">
+                <div class="d-flex justify-content-between small text-secondary mb-1"><span>Level Progress</span><span
+                        id="xpText">0/100 XP</span></div>
+                <div style="height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
+                    <div id="xpFill" style="height:100%; width:0%; background:#10b981; transition:1s;"></div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-12 col-lg-8">
+                    <div class="card-custom h-100">
+                        <h5>Skills</h5>
+                        <div id="skillContainer" class="row g-3 mt-2"></div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-4">
+                    <div class="card-custom h-100">
+                        <h5 class="text-warning mb-1">Exam Countdown</h5>
+                        <div id="examCountdownDisplay" class="text-center py-4">
+                            <h1 class="fw-bold display-4 mb-0" id="daysToExam">--</h1>
+                            <p class="text-secondary small">Days until next Exam</p>
+                            <div id="nextExamName" class="badge bg-danger bg-opacity-25 text-danger">No exams scheduled
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-custom mt-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="text-info mb-0"><i class="fas fa-book-bookmark me-2"></i>Pocket Library</h5>
+                    <button class="btn btn-sm btn-outline-info rounded-pill" onclick="openLinkModal()">+ Save</button>
+                </div>
+                <ul id="libraryList" class="list-group list-group-flush small"
+                    style="max-height: 200px; overflow-y: auto;">
+                    <li class="text-secondary text-center py-3">No saved resources yet.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="cal" class="section">
+            <div class="row g-4">
+                <div class="col-12 col-lg-7">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="fw-bold m-0">Calendar</h2>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-dark" onclick="changeMonth(-1)"><i
+                                    class="fas fa-chevron-left"></i></button>
+                            <span id="monthYear" class="fw-bold px-2 pt-1">Date</span>
+                            <button class="btn btn-sm btn-dark" onclick="changeMonth(1)"><i
+                                    class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-custom mb-3">
+                        <div class="d-flex flex-wrap gap-2 mb-2 justify-content-center small text-secondary">
+                            <span class="badge bg-danger">Exam</span><span class="badge bg-success">Project</span><span
+                                class="badge bg-primary">Study</span>
+                        </div>
+                        <div class="calendar-grid" id="calendarGrid"></div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-5">
+                    <div class="card-custom text-center py-4 h-100 d-flex flex-column justify-content-center">
+                        <div class="d-flex justify-content-between align-items-center px-2 mb-2">
+                            <h5 class="m-0 fw-bold text-secondary"><i class="fas fa-stopwatch me-2"></i>Focus Timer</h5>
+                        </div>
+                        <div class="timer-ring-container">
+                            <svg class="timer-ring">
+                                <circle class="ring-bg" cx="90" cy="90" r="80"></circle>
+                                <circle id="ringProgress" class="ring-progress" cx="90" cy="90" r="80"></circle>
+                            </svg>
+                            <div class="timer-display">
+                                <div id="timerCountdown" class="display-time" style="display: none;">00:00</div>
+                                <input type="number" id="timerInput" class="display-input" placeholder="00" min="1"
+                                    max="180" autocomplete="off">
+                                <div class="text-secondary small mt-1" style="letter-spacing: 1px;">MINUTES</div>
+                            </div>
+                        </div>
+                        <div class="timer-controls d-flex justify-content-center gap-3 mt-3">
+                            <button class="btn-timer btn-play" onclick="startTimer()"><i
+                                    class="fas fa-play"></i></button>
+                            <button class="btn-timer btn-stop" onclick="resetTimer()"><i
+                                    class="fas fa-stop"></i></button>
+                        </div>
+                        <div class="mt-4 text-start px-2">
+                            <h6 class="text-info border-bottom border-secondary pb-2 mb-2">Upcoming</h6>
+                            <ul class="list-group list-group-flush p-0" id="upcomingList"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="projects" class="section">
+            <h2 class="fw-bold mb-4">Project Board</h2>
+            <div class="kanban-board">
+                <div class="kanban-col">
+                    <div class="kanban-header text-warning">To Do <button
+                            class="btn btn-sm btn-outline-warning rounded-circle"
+                            onclick="addKanbanItem('todo')">+</button></div>
+                    <div id="kb-todo" class="kanban-items"></div>
+                </div>
+                <div class="kanban-col">
+                    <div class="kanban-header text-primary">In Progress <button
+                            class="btn btn-sm btn-outline-primary rounded-circle"
+                            onclick="addKanbanItem('doing')">+</button></div>
+                    <div id="kb-doing" class="kanban-items"></div>
+                </div>
+                <div class="kanban-col">
+                    <div class="kanban-header text-success">Done</div>
+                    <div id="kb-done" class="kanban-items"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="whiteboard" class="section">
+            <h2 class="fw-bold mb-4">Idea Canvas</h2>
+            <div id="whiteboard-container">
+                <canvas id="drawingCanvas"></canvas>
+                <div class="whiteboard-toolbar">
+                    <div class="color-btn active" style="background:black" onclick="setColor('black', this)"></div>
+                    <div class="color-btn" style="background:#ef4444" onclick="setColor('#ef4444', this)"></div>
+                    <div class="color-btn" style="background:#3b82f6" onclick="setColor('#3b82f6', this)"></div>
+                    <div class="color-btn" style="background:#10b981" onclick="setColor('#10b981', this)"></div>
+                    <div style="width:1px; background:rgba(255,255,255,0.3); margin:0 5px;"></div>
+                    <button class="tool-btn" onclick="setEraser()"><i class="fas fa-eraser"></i></button>
+                    <button class="tool-btn" onclick="clearCanvas()"><i class="fas fa-trash-alt"></i></button>
+                    <button class="tool-btn" onclick="downloadCanvas()"><i class="fas fa-download"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <div id="profile" class="section">
+            <h2 class="fw-bold mb-4">Profile</h2>
+            <div class="card-custom p-4 mw-600 mx-auto">
+                <div class="text-center mb-4">
+                    <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center"
+                        style="width:70px;height:70px;font-size:1.8rem;">👤</div>
+                    <h3 id="profileNameDisplay" class="mt-2">User</h3>
+                </div>
+                <form onsubmit="updateUserProfile(event)">
+                    <label class="small text-secondary">Name</label><input type="text" id="editName"
+                        class="form-control dark-input mb-3">
+                    <label class="small text-secondary">Phone</label><input type="tel" id="editPhone"
+                        class="form-control dark-input mb-3">
+                    <button class="btn btn-primary w-100 rounded-pill mt-2">Save Profile</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="settings" class="section">
+            <h2 class="fw-bold mb-4">Settings</h2>
+            <div class="row g-4">
+                <div class="col-md-8">
+                    <div class="card-custom">
+                        <h5>Theme Selection</h5>
+                        <div class="d-flex flex-wrap gap-2 mt-3">
+                            <button class="btn btn-outline-primary flex-grow-1" onclick="setTheme('sea')">🌊 Deep
+                                Sea</button>
+                            <button class="btn btn-outline-success flex-grow-1" onclick="setTheme('carbon')">🌿
+                                Carbon</button>
+                            <button class="btn btn-outline-secondary flex-grow-1" onclick="setTheme('amethyst')"
+                                style="border-color: #a855f7; color: #a855f7;">🔮 Amethyst</button>
+                            <button class="btn btn-outline-danger flex-grow-1" onclick="setTheme('crimson')">🔥
+                                Crimson</button>
+                            <button class="btn btn-outline-info flex-grow-1" onclick="setTheme('aurora')">🌌
+                                Aurora</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="report" class="section">
+            <h2 class="fw-bold mb-4">Daily Report</h2>
+            <textarea id="reportText" class="form-control dark-input mb-3" rows="10"
+                placeholder="What did you learn today?"></textarea>
+            <button onclick="downloadReport()" class="btn btn-success px-5 py-2 rounded-pill w-100 w-md-auto"><i
+                    class="fas fa-download me-2"></i>Save to Device</button>
+        </div>
+
+        <div id="ai" class="section">
+            <div class="d-flex align-items-center mb-2 px-2">
+                <h2 class="fw-bold m-0 me-3 text-white">Veda AI</h2>
+            </div>
+            <div id="chatBox">
+                <div class="chat-bubble chat-ai">
+                    <div class="d-flex align-items-center mb-1 text-primary"><span class="me-2 fs-5">🕉️</span>
+                        <strong>Veda</strong></div>Namaste! I am Veda. How may I assist your engineering journey today?
+                </div>
+                <div id="loadingBubble" class="chat-thinking"
+                    style="display:none; color: gray; font-size: 0.8rem; margin-top: 5px;">Thinking...</div>
+            </div>
+            <div class="ai-footer">
+                <div class="chip-container">
+                    <button class="ai-chip" onclick="quickPrompt('Explain this simply: ')">🎓 Explain</button>
+                    <button class="ai-chip" onclick="quickPrompt('Create a quiz about: ')">❓ Quiz</button>
+                    <button class="ai-chip" onclick="quickPrompt('Fix this code: ')">🐞 Fix Code</button>
+                    <button class="ai-chip" onclick="quickPrompt('Project idea for: ')">💡 Project</button>
+                </div>
+                <div class="ai-input-container">
+                    <input type="text" id="aiQuery" placeholder="Ask Veda deeply..." autocomplete="off"
+                        onkeypress="handleAiEnter(event)">
+                    <button onclick="askAI()" class="ai-send-btn"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="ideaModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content dark-theme p-5 text-center position-relative overflow-hidden">
+                <div
+                    style="position:absolute; top:-50px; left:-50px; width:150px; height:150px; background:var(--accent); filter:blur(80px); opacity:0.3;">
+                </div>
+                <i
+                    class="fas fa-lightbulb fa-3x text-warning mb-4 animate__animated animate__pulse animate__infinite"></i>
+                <h3 class="fw-bold mb-2">Idea Spark</h3>
+                <p class="text-secondary small mb-4">Click to generate a unique engineering project with AI</p>
+
+                <div id="ideaOutput" class="p-4 rounded mb-4"
+                    style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); min-height:80px; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:1.1rem; line-height:1.4;">
+                    Ready to inspire?
+                </div>
+
+                <button class="btn btn-warning w-100 rounded-pill py-2 fw-bold text-dark shadow-sm"
+                    onclick="spinIdea()">
+                    <i class="fas fa-magic me-2"></i> Generate with AI
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="formulaModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content dark-theme p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="modal-title"><i class="fas fa-square-root-alt me-2"></i>My Formulas</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="bg-dark bg-opacity-50 p-3 rounded mb-3">
+                    <div class="row g-2">
+                        <div class="col-4"><input id="fSubject" class="form-control form-control-sm dark-input"
+                                placeholder="Subject"></div>
+                        <div class="col-8"><input id="fName" class="form-control form-control-sm dark-input"
+                                placeholder="Name (e.g. Ohm's Law)"></div>
+                        <div class="col-12"><input id="fEq" class="form-control form-control-sm dark-input"
+                                placeholder="Equation (e.g. V = IR)"></div>
+                        <div class="col-12"><button class="btn btn-sm btn-primary w-100" onclick="addFormula()">+ Add
+                                Formula</button></div>
+                    </div>
+                </div>
+
+                <div id="formulaListContainer" style="max-height: 300px; overflow-y: auto;">
+                    <div class="text-center text-secondary small py-3">Loading formulas...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addLinkModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content dark-theme p-4">
+                <h5 class="modal-title mb-3">Save Resource</h5>
+                <div class="mb-3"><label class="text-secondary small">Title</label><input type="text"
+                        id="linkTitleInput" class="form-control dark-input" placeholder="e.g. ROS Docs"></div>
+                <div class="mb-4"><label class="text-secondary small">URL</label><input type="url" id="linkUrlInput"
+                        class="form-control dark-input" placeholder="https://..."></div>
+                <button class="btn btn-info w-100 rounded-pill fw-bold text-dark" onclick="saveNewLink()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="taskModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content dark-theme p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 id="modalDate" class="modal-title"></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <h6 class="text-secondary small mb-2">Today's Goals</h6>
+                    <ul id="taskListDisplay" class="list-group mb-3"></ul>
+                    <hr class="border-secondary">
+                    <h6 class="text-secondary small mb-2">Add New Goal</h6>
+                    <input type="text" id="taskInput" class="form-control dark-input mb-2" placeholder="Task Name">
+                    <select id="taskCategory" class="form-control dark-input mb-3">
+                        <option value="general">🟡 General</option>
+                        <option value="exam">🔴 Exam</option>
+                        <option value="study">🔵 Study</option>
+                        <option value="project">🟢 Project</option>
+                    </select>
+                    <button class="btn btn-primary w-100 rounded-pill" onclick="addTaskToDate()">Add Task</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="skillModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content dark-theme p-4">
+                <h3 class="modal-title text-center mb-4">Add Skill</h3>
+                <div class="mb-3"><input type="text" id="newSkillName" class="form-control dark-input"
+                        placeholder="Skill Name"></div>
+                <div class="mb-4"><input type="number" id="newSkillLevel" class="form-control dark-input"
+                        placeholder="Proficiency (0-100)"></div>
+                <button class="btn btn-primary w-100 rounded-pill" onclick="addNewSkill()">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="removeSkillModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content dark-theme p-4">
+                <h4 class="text-danger text-center mb-3">Manage Skills</h4>
+                <div class="list-group mt-3" id="removeListContainer"></div>
+                <button class="btn btn-secondary w-100 mt-3 rounded-pill" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup as _signInWithPopup, onAuthStateChanged as _onAuthStateChanged, signOut as _signOut, signInWithEmailAndPassword as _signInWithEmailAndPassword, createUserWithEmailAndPassword as _createUserWithEmailAndPassword, updateProfile as _updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc as _doc, getDoc as _getDoc, setDoc as _setDoc, updateDoc as _updateDoc, arrayUnion as _arrayUnion, arrayRemove as _arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        let auth = null, db = null;
+        let isLocalMode = false;
+
+        let signInWithPopup, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile;
+        let doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove;
+
+        class ArrayUnionSentinel { constructor(val) { this.val = val; } }
+        class ArrayRemoveSentinel { constructor(val) { this.val = val; } }
+
+        async function init() {
+            let firebaseConfig = {};
+            try {
+                const res = await fetch('/api/config');
+                if (res.ok) {
+                    firebaseConfig = await res.json();
+                }
+            } catch (e) {
+                console.warn("Could not load firebase config from server:", e);
+            }
+
+            // Try to initialize Firebase
+            if (!firebaseConfig || !firebaseConfig.apiKey) {
+                console.warn("No Firebase API Key found. Operating in Local Mode.");
+                isLocalMode = true;
+            } else {
+                try {
+                    const app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+
+                    signInWithPopup = _signInWithPopup;
+                    onAuthStateChanged = _onAuthStateChanged;
+                    signOut = _signOut;
+                    signInWithEmailAndPassword = _signInWithEmailAndPassword;
+                    createUserWithEmailAndPassword = _createUserWithEmailAndPassword;
+                    updateProfile = _updateProfile;
+                    doc = _doc;
+                    getDoc = _getDoc;
+                    setDoc = _setDoc;
+                    updateDoc = _updateDoc;
+                    arrayUnion = _arrayUnion;
+                    arrayRemove = _arrayRemove;
+                } catch (e) {
+                    console.error("Failed to initialize Firebase, falling back to Local Mode:", e);
+                    isLocalMode = true;
+                }
+            }
+
+            // Setup Local Mode fallback implementations
+            if (isLocalMode) {
+                const LOCAL_USERS_KEY = "grow_more_local_users";
+                const ACTIVE_USER_KEY = "grow_more_active_user";
+                const USER_DATA_PREFIX = "grow_more_user_data_";
+
+                auth = { currentUser: null };
+                db = {}; // dummy
+
+                onAuthStateChanged = (authObj, callback) => {
+                    const activeEmail = localStorage.getItem(ACTIVE_USER_KEY);
+                    if (activeEmail) {
+                        const accounts = JSON.parse(localStorage.getItem(LOCAL_USERS_KEY)) || {};
+                        const acc = accounts[activeEmail];
+                        if (acc) {
+                            const user = { uid: activeEmail, displayName: acc.name, email: activeEmail };
+                            auth.currentUser = user;
+                            callback(user);
+                            return;
+                        }
+                    }
+                    auth.currentUser = null;
+                    callback(null);
+                };
+
+                signInWithPopup = (authObj, provider) => {
+                    // Local Mode guest account
+                    const email = "guest@growmore.local";
+                    const accounts = JSON.parse(localStorage.getItem(LOCAL_USERS_KEY)) || {};
+                    if (!accounts[email]) {
+                        accounts[email] = { name: "Guest Student", phone: "", password: "" };
+                        localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(accounts));
+                    }
+                    localStorage.setItem(ACTIVE_USER_KEY, email);
+                    location.reload();
+                    return Promise.resolve();
+                };
+
+                signInWithEmailAndPassword = (authObj, email, password) => {
+                    const accounts = JSON.parse(localStorage.getItem(LOCAL_USERS_KEY)) || {};
+                    const acc = accounts[email];
+                    if (acc && acc.password === password) {
+                        localStorage.setItem(ACTIVE_USER_KEY, email);
+                        location.reload();
+                        return Promise.resolve();
+                    }
+                    return Promise.reject(new Error("Invalid email or password"));
+                };
+
+                createUserWithEmailAndPassword = (authObj, email, password) => {
+                    const accounts = JSON.parse(localStorage.getItem(LOCAL_USERS_KEY)) || {};
+                    if (accounts[email]) {
+                        return Promise.reject(new Error("Email already registered"));
+                    }
+                    accounts[email] = { password: password, name: "", phone: "" };
+                    localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(accounts));
+                    localStorage.setItem(ACTIVE_USER_KEY, email);
+                    return Promise.resolve({ user: { uid: email, displayName: "" } });
+                };
+
+                updateProfile = (userObj, profileData) => {
+                    const email = localStorage.getItem(ACTIVE_USER_KEY);
+                    if (email) {
+                        const accounts = JSON.parse(localStorage.getItem(LOCAL_USERS_KEY)) || {};
+                        if (accounts[email]) {
+                            if (profileData.displayName !== undefined) {
+                                accounts[email].name = profileData.displayName;
+                            }
+                            localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(accounts));
+                        }
+                        if (auth.currentUser) {
+                            auth.currentUser.displayName = profileData.displayName;
+                        }
+                    }
+                    return Promise.resolve();
+                };
+
+                signOut = () => {
+                    localStorage.removeItem(ACTIVE_USER_KEY);
+                    location.reload();
+                    return Promise.resolve();
+                };
+
+                doc = (dbObj, collection, id) => {
+                    return { collection, id };
+                };
+
+                getDoc = (docRef) => {
+                    const dataStr = localStorage.getItem(USER_DATA_PREFIX + docRef.id);
+                    const data = dataStr ? JSON.parse(dataStr) : null;
+                    return Promise.resolve({
+                        exists: () => data !== null,
+                        data: () => data
+                    });
+                };
+
+                setDoc = (docRef, data, options) => {
+                    const key = USER_DATA_PREFIX + docRef.id;
+                    if (options && options.merge) {
+                        const existingStr = localStorage.getItem(key);
+                        const existing = existingStr ? JSON.parse(existingStr) : {};
+                        const merged = { ...existing, ...data };
+                        localStorage.setItem(key, JSON.stringify(merged));
+                    } else {
+                        localStorage.setItem(key, JSON.stringify(data));
+                    }
+                    return Promise.resolve();
+                };
+
+                updateDoc = (docRef, updateData) => {
+                    const key = USER_DATA_PREFIX + docRef.id;
+                    const existingStr = localStorage.getItem(key);
+                    const existing = existingStr ? JSON.parse(existingStr) : {};
+                    
+                    for (const [fieldKey, val] of Object.entries(updateData)) {
+                        if (val instanceof ArrayUnionSentinel) {
+                            if (!Array.isArray(existing[fieldKey])) {
+                                existing[fieldKey] = [];
+                            }
+                            const itemToAdd = val.val;
+                            const itemStr = JSON.stringify(itemToAdd);
+                            const exists = existing[fieldKey].some(item => JSON.stringify(item) === itemStr);
+                            if (!exists) {
+                                existing[fieldKey].push(itemToAdd);
+                            }
+                        } else if (val instanceof ArrayRemoveSentinel) {
+                            if (Array.isArray(existing[fieldKey])) {
+                                const itemToRemove = val.val;
+                                const itemStr = JSON.stringify(itemToRemove);
+                                existing[fieldKey] = existing[fieldKey].filter(item => JSON.stringify(item) !== itemStr);
+                            }
+                        } else {
+                            existing[fieldKey] = val;
+                        }
+                    }
+                    localStorage.setItem(key, JSON.stringify(existing));
+                    return Promise.resolve();
+                };
+
+                arrayUnion = (val) => new ArrayUnionSentinel(val);
+                arrayRemove = (val) => new ArrayRemoveSentinel(val);
+            }
+
+            // Set up UI listeners
+            if (isLocalMode) {
+                const errorEl = document.getElementById('authError');
+                if (errorEl) {
+                    errorEl.innerHTML = "<div class='badge bg-warning text-dark p-2 w-100' style='white-space: normal;'>⚠️ Running in offline Local Mode. Data will be saved in your browser's local storage.</div>";
+                }
+            }
+
+            // Bind Auth UI actions
+            window.loginGoogle = () => signInWithPopup(auth, new GoogleAuthProvider()).catch(e => showError(e.message));
+            window.loginEmail = () => signInWithEmailAndPassword(auth, document.getElementById('emailInput').value, document.getElementById('passInput').value).catch(e => showError(e.message));
+            window.registerEmail = () => {
+                const n = document.getElementById('nameInput').value; if (!n) return showError("Enter Name");
+                createUserWithEmailAndPassword(auth, document.getElementById('emailInput').value, document.getElementById('passInput').value)
+                    .then(async (c) => { await updateProfile(c.user, { displayName: n }); await setDoc(doc(db, "users", c.user.uid), { phone: "" }, { merge: true }); location.reload(); })
+                    .catch(e => showError(e.message));
+            };
+            window.logout = () => signOut(auth).then(() => location.reload());
+
+            // Initialize Auth listener
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    document.getElementById('auth-overlay').style.display = 'none';
+                    document.getElementById('welcomeName').innerText = `Welcome, ${user.displayName || "Student"}`;
+                    document.getElementById('profileNameDisplay').innerText = user.displayName || "Student";
+                    document.getElementById('editName').value = user.displayName || "";
+                    loadUserData(user.uid);
+                }
+            });
+
+            // Hide splash screen
+            setTimeout(() => { document.getElementById('splash-screen').classList.add('hidden'); }, 1000);
+        }
+
+        // Run initializer
+        init();
+
+        async function loadUserData(uid) {
+            const todayStr = new Date().toDateString();
+            const lastLogin = localStorage.getItem('lastLoginDate');
+            let streak = parseInt(localStorage.getItem('studyStreak')) || 0;
+            if (lastLogin !== todayStr) {
+                const yest = new Date(); yest.setDate(yest.getDate() - 1);
+                if (lastLogin === yest.toDateString()) streak++; else streak = 1;
+                localStorage.setItem('studyStreak', streak); localStorage.setItem('lastLoginDate', todayStr);
+            }
+            document.getElementById('streakCount').innerText = streak;
+
+            const snap = await getDoc(doc(db, "users", uid));
+            if (snap.exists()) {
+                const data = snap.data();
+                window.userTasks = data.tasks || {};
+                window.userSkills = data.skills || [];
+
+                // KANBAN LOAD (Ensure structure exists)
+                window.kanbanData = data.kanban || { todo: [], doing: [], done: [] };
+                if (!window.kanbanData.todo) window.kanbanData.todo = [];
+                if (!window.kanbanData.doing) window.kanbanData.doing = [];
+                if (!window.kanbanData.done) window.kanbanData.done = [];
+
+                // FORMULA LOAD
+                window.formulas = data.formulas || [];
+
+                if (data.phone) document.getElementById('editPhone').value = data.phone;
+
+                const xp = (window.userSkills.length * 10) + (Object.keys(window.userTasks).length * 2);
+                let rank = "Novice"; if (xp > 30) rank = "Apprentice"; if (xp > 80) rank = "Builder"; if (xp > 150) rank = "Architect";
+                document.getElementById('userRank').innerText = rank;
+                document.getElementById('xpText').innerText = `${xp} XP`;
+                document.getElementById('xpFill').style.width = Math.min(xp, 100) + "%";
+
+                const cont = document.getElementById('skillContainer');
+                if (window.userSkills.length === 0) cont.innerHTML = "<div class='text-center text-secondary w-100'>No skills yet.</div>";
+                else {
+                    cont.innerHTML = window.userSkills.map(s => {
+                        let icon = "fa-bolt"; let n = s.name.toLowerCase();
+                        if (n.includes("python") || n.includes("code")) icon = "fa-code";
+                        if (n.includes("robot") || n.includes("ros")) icon = "fa-robot";
+                        return `<div class="col-6 col-lg-4"><div class="skill-card"><i class="fas ${icon} skill-icon"></i><h6 class="fw-bold mb-1">${s.name}</h6><div class="badge bg-primary bg-opacity-25 text-primary mb-2">${s.level}% Mastery</div><div class="progress" style="height:4px;background:rgba(255,255,255,0.1)"><div class="progress-bar bg-primary" style="width:${s.level}%"></div></div></div></div>`;
+                    }).join('');
+                }
+                if (data.resources) loadLibraryUI(data.resources);
+
+                // Render Modules
+                renderCalendar();
+                updateUpcoming();
+                renderKanbanBoard();
+                updateExamCountdown();
+                renderFormulas(); // NEW
+            } else {
+                await setDoc(doc(db, "users", uid), { skills: [], tasks: {}, kanban: { todo: [], doing: [], done: [] }, formulas: [] });
+                window.kanbanData = { todo: [], doing: [], done: [] };
+                window.formulas = [];
+                renderCalendar();
+                renderKanbanBoard();
+            }
+        }
+
+        // --- CALENDAR LOGIC ---
+        let cMonth = new Date().getMonth(), cYear = new Date().getFullYear();
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+        window.renderCalendar = () => {
+            const grid = document.getElementById('calendarGrid'); if (!grid) return; grid.innerHTML = "";
+            document.getElementById('monthYear').innerText = `${months[cMonth]} ${cYear}`;
+            dayNames.forEach(d => grid.innerHTML += `<div class="text-center text-secondary small fw-bold py-1">${d}</div>`);
+            const first = new Date(cYear, cMonth, 1).getDay();
+            const total = new Date(cYear, cMonth + 1, 0).getDate();
+            const today = new Date();
+            for (let i = 0; i < first; i++) grid.innerHTML += "<div></div>";
+            for (let d = 1; d <= total; d++) {
+                const dateStr = `${cYear}-${cMonth + 1}-${d}`;
+                let tasks = window.userTasks ? window.userTasks[dateStr] : [];
+                if (tasks && !Array.isArray(tasks)) tasks = [tasks];
+                if (!tasks) tasks = [];
+                const isToday = (d === today.getDate() && cMonth === today.getMonth() && cYear === today.getFullYear());
+                let dotsHtml = `<div class="dots-container">`;
+                tasks.slice(0, 3).forEach(t => { dotsHtml += `<div class="task-dot dot-${t.cat}"></div>`; });
+                dotsHtml += `</div>`;
+                grid.innerHTML += `<div class="cal-date ${isToday ? 'today' : ''}" onclick="openTask('${dateStr}')">${d} ${dotsHtml}</div>`;
+            }
+        };
+        window.changeMonth = (d) => { cMonth += d; if (cMonth < 0) { cMonth = 11; cYear--; } if (cMonth > 11) { cMonth = 0; cYear++; } renderCalendar(); };
+        window.openTask = (d) => { window.selectedDate = d; document.getElementById('modalDate').innerText = d; renderTaskList(d); new bootstrap.Modal(document.getElementById('taskModal')).show(); };
+        function renderTaskList(d) {
+            const list = document.getElementById('taskListDisplay'); list.innerHTML = "";
+            let tasks = window.userTasks && window.userTasks[d] ? window.userTasks[d] : [];
+            if (!Array.isArray(tasks)) tasks = [tasks];
+            if (tasks.length === 0) { list.innerHTML = "<li class='list-group-item bg-transparent text-secondary text-center'>No tasks yet.</li>"; }
+            else { tasks.forEach((t, index) => { list.innerHTML += `<li class="list-group-item list-group-item-dark d-flex justify-content-between align-items-center mb-1 rounded"><span><span class="badge dot-${t.cat} me-2">&nbsp;</span>${t.text}</span><button class="btn btn-sm btn-outline-danger border-0" onclick="removeTaskFromDate(${index})"><i class="fas fa-trash"></i></button></li>`; }); }
+        }
+
+        // --- ADD TASK (OPTIMISTIC UI) ---
+        window.addTaskToDate = async () => {
+            const txt = document.getElementById('taskInput').value, cat = document.getElementById('taskCategory').value, d = window.selectedDate;
+            if (!txt) return;
+            if (!window.userTasks) window.userTasks = {};
+            if (!window.userTasks[d]) window.userTasks[d] = [];
+            if (!Array.isArray(window.userTasks[d])) window.userTasks[d] = [window.userTasks[d]];
+            window.userTasks[d].push({ text: txt, cat: cat });
+            renderTaskList(d); renderCalendar(); updateUpcoming(); updateExamCountdown();
+            document.getElementById('taskInput').value = "";
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { tasks: window.userTasks });
+        };
+
+        window.removeTaskFromDate = async (index) => {
+            const d = window.selectedDate; let tasks = window.userTasks[d]; if (!Array.isArray(tasks)) tasks = [tasks];
+            tasks.splice(index, 1); if (tasks.length === 0) delete window.userTasks[d]; else window.userTasks[d] = tasks;
+            renderTaskList(d); renderCalendar(); updateUpcoming(); updateExamCountdown();
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { tasks: window.userTasks });
+        };
+
+        function updateUpcoming() {
+            const list = document.getElementById('upcomingList'); list.innerHTML = "";
+            let allTasks = [];
+            if (window.userTasks) { Object.keys(window.userTasks).forEach(d => { let daily = window.userTasks[d]; if (!Array.isArray(daily)) daily = [daily]; daily.forEach(t => allTasks.push({ date: d, ...t })); }); }
+            allTasks = allTasks.filter(t => new Date(t.date) >= new Date().setHours(0, 0, 0, 0)).sort((a, b) => new Date(a.date) - new Date(b.date));
+            if (allTasks.length === 0) list.innerHTML = "<li class='list-group-item bg-transparent text-center text-secondary border-0'>No tasks</li>";
+            else allTasks.slice(0, 3).forEach(t => list.innerHTML += `<li class="list-group-item bg-transparent text-white border-0 px-0 py-1 d-flex justify-content-between"><span><span class="badge bg-secondary me-2" style="font-size:0.6em">${t.cat.toUpperCase()}</span>${t.text}</span><small class="text-secondary">${t.date}</small></li>`);
+        }
+
+        function updateExamCountdown() {
+            let allExams = [];
+            if (window.userTasks) { Object.keys(window.userTasks).forEach(d => { let daily = window.userTasks[d]; if (!Array.isArray(daily)) daily = [daily]; daily.forEach(t => { if (t.cat === 'exam') allExams.push({ date: d, ...t }); }); }); }
+            allExams = allExams.filter(t => new Date(t.date) >= new Date().setHours(0, 0, 0, 0)).sort((a, b) => new Date(a.date) - new Date(b.date));
+            const countDisplay = document.getElementById('daysToExam');
+            const nameDisplay = document.getElementById('nextExamName');
+            if (allExams.length > 0) {
+                const nextExam = allExams[0];
+                const diffTime = Math.abs(new Date(nextExam.date) - new Date());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                countDisplay.innerText = diffDays;
+                nameDisplay.innerText = nextExam.text;
+                nameDisplay.className = "badge bg-danger text-white";
+            } else {
+                countDisplay.innerText = "--";
+                nameDisplay.innerText = "No exams scheduled";
+                nameDisplay.className = "badge bg-danger bg-opacity-25 text-danger";
+            }
+        }
+
+        // --- KANBAN BOARD FUNCTIONS ---
+        window.addKanbanItem = async (col) => {
+            const text = prompt("Task Name:");
+            if (!text) return;
+            if (!window.kanbanData) window.kanbanData = { todo: [], doing: [], done: [] };
+            window.kanbanData[col].push(text);
+            renderKanbanBoard();
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { kanban: window.kanbanData });
+        };
+
+        window.moveKanbanItem = async (col, index, dir) => {
+            const item = window.kanbanData[col].splice(index, 1)[0];
+            let targetCol = col;
+            if (col === 'todo' && dir === 1) targetCol = 'doing';
+            else if (col === 'doing' && dir === -1) targetCol = 'todo';
+            else if (col === 'doing' && dir === 1) targetCol = 'done';
+            else if (col === 'done' && dir === -1) targetCol = 'doing';
+
+            window.kanbanData[targetCol].push(item);
+            renderKanbanBoard();
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { kanban: window.kanbanData });
+        };
+
+        window.deleteKanbanItem = async (col, index) => {
+            if (!confirm("Delete?")) return;
+            window.kanbanData[col].splice(index, 1);
+            renderKanbanBoard();
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { kanban: window.kanbanData });
+        };
+
+        function renderKanbanBoard() {
+            if (!window.kanbanData) return;
+            const cols = ['todo', 'doing', 'done'];
+            cols.forEach(c => {
+                const el = document.getElementById(`kb-${c}`);
+                if (!el) return;
+                el.innerHTML = window.kanbanData[c].map((item, i) => `
+                <div class="kanban-card">
+                    ${item}
+                    <div class="kanban-actions">
+                        ${c !== 'todo' ? `<button class="kb-btn" onclick="moveKanbanItem('${c}', ${i}, -1)"><i class="fas fa-arrow-left"></i></button>` : '<span></span>'}
+                        <button class="kb-btn text-danger" onclick="deleteKanbanItem('${c}', ${i})"><i class="fas fa-trash"></i></button>
+                        ${c !== 'done' ? `<button class="kb-btn" onclick="moveKanbanItem('${c}', ${i}, 1)"><i class="fas fa-arrow-right"></i></button>` : '<span></span>'}
+                    </div>
+                </div>
+            `).join('');
+            });
+        }
+
+        // --- WHITEBOARD (NEW) ---
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false, currentTool = 'pen', currentColor = 'black';
+
+        function resizeCanvas() {
+            const container = document.getElementById('whiteboard-container');
+            if (container) {
+                canvas.width = container.offsetWidth;
+                canvas.height = container.offsetHeight;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.fillStyle = "white";
+                ctx.fillRect(0, 0, canvas.width, canvas.height); // Fill white bg
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.target.classList.contains('active-section') && mutation.target.id === 'whiteboard') {
+                    setTimeout(resizeCanvas, 50);
+                }
+            });
+        });
+        observer.observe(document.getElementById('whiteboard'), { attributes: true });
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrawing(e.touches[0]); });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); });
+        canvas.addEventListener('touchend', stopDrawing);
+
+        function startDrawing(e) { isDrawing = true; ctx.beginPath(); ctx.moveTo(getX(e), getY(e)); }
+        function draw(e) { if (!isDrawing) return; ctx.lineWidth = currentTool === 'eraser' ? 20 : 3; ctx.strokeStyle = currentTool === 'eraser' ? 'white' : currentColor; ctx.lineTo(getX(e), getY(e)); ctx.stroke(); }
+        function stopDrawing() { isDrawing = false; ctx.closePath(); }
+        function getX(e) { return e.clientX - canvas.getBoundingClientRect().left; }
+        function getY(e) { return e.clientY - canvas.getBoundingClientRect().top; }
+
+        window.setColor = (c, btn) => { currentTool = 'pen'; currentColor = c; document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); };
+        window.setEraser = () => { currentTool = 'eraser'; };
+        window.clearCanvas = () => { ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, canvas.height); };
+        window.downloadCanvas = () => { const link = document.createElement('a'); link.download = 'idea-canvas.png'; link.href = canvas.toDataURL(); link.click(); };
+
+        // --- NEW: DYNAMIC FORMULAS ---
+        window.openFormulas = () => { renderFormulas(); new bootstrap.Modal(document.getElementById('formulaModal')).show(); };
+
+        window.addFormula = async () => {
+            const s = document.getElementById('fSubject').value;
+            const n = document.getElementById('fName').value;
+            const e = document.getElementById('fEq').value;
+            if (!s || !n || !e) return alert("Fill all fields");
+
+            if (!window.formulas) window.formulas = [];
+            window.formulas.push({ s: s, n: n, e: e });
+
+            document.getElementById('fSubject').value = ""; document.getElementById('fName').value = ""; document.getElementById('fEq').value = "";
+
+            renderFormulas();
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { formulas: window.formulas });
+        };
+
+        window.renderFormulas = () => {
+            const list = document.getElementById('formulaListContainer');
+            if (!window.formulas || window.formulas.length === 0) {
+                list.innerHTML = "<div class='text-center text-secondary py-3'>No formulas saved yet.</div>";
+                return;
+            }
+            list.innerHTML = window.formulas.map((f, i) => `
+            <div class="formula-card">
+                <div>
+                    <span class="badge bg-secondary mb-1">${f.s}</span>
+                    <div class="fw-bold text-white">${f.n}</div>
+                    <div class="text-info font-monospace">${f.e}</div>
+                </div>
+                <button class="btn btn-sm text-danger" onclick="deleteFormula(${i})"><i class="fas fa-trash"></i></button>
+            </div>
+        `).join('');
+        };
+
+        window.deleteFormula = async (i) => {
+            if (!confirm("Delete?")) return;
+            window.formulas.splice(i, 1);
+            renderFormulas();
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { formulas: window.formulas });
+        };
+
+        // --- NEW: IDEA GENERATOR (BEST UI - AI CONNECTED) ---
+        window.openIdeaModal = () => new bootstrap.Modal(document.getElementById('ideaModal')).show();
+        window.spinIdea = async () => {
+            const out = document.getElementById('ideaOutput');
+            out.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Brainstorming...";
+
+            try {
+                const r = await fetch('/generate_idea', { method: 'POST' });
+                const d = await r.json();
+                out.innerText = "✨ " + d.reply;
+            } catch (e) {
+                // Fallback if AI server isn't running
+                const ideas = ["Line Follower Robot", "Home Automation", "Smart Irrigation", "Gesture Robot", "Solar Tracker"];
+                const random = ideas[Math.floor(Math.random() * ideas.length)];
+                out.innerText = "✨ " + random;
+            }
+        };
+
+        // --- TIMER ---
+        let timerInt;
+        window.startTimer = () => {
+            if (timerInt) return;
+            const inp = document.getElementById('timerInput'), disp = document.getElementById('timerCountdown');
+            let val = parseInt(inp.value); if (!val || val <= 0) return alert("Please type minutes first!");
+            let time = val * 60; inp.style.display = 'none'; disp.style.display = 'block';
+            const ring = document.getElementById('ringProgress'); const circumference = 565; let totalTime = time;
+            timerInt = setInterval(() => {
+                if (time <= 0) { resetTimer(); alert("Session Complete!"); }
+                else { time--; const m = Math.floor(time / 60), s = time % 60; disp.innerText = `${m}:${s < 10 ? '0' + s : s}`; const offset = circumference - (time / totalTime) * circumference; ring.style.strokeDashoffset = offset; }
+            }, 1000);
+        };
+        window.resetTimer = () => { clearInterval(timerInt); timerInt = null; document.getElementById('timerInput').style.display = 'block'; document.getElementById('timerInput').value = ""; document.getElementById('timerCountdown').style.display = 'none'; document.getElementById('timerCountdown').innerText = "00:00"; document.getElementById('ringProgress').style.strokeDashoffset = 0; };
+
+        // --- AI ---
+        const converter = new showdown.Converter();
+        window.quickPrompt = (t) => { const input = document.getElementById('aiQuery'); input.value = t; input.focus(); };
+        window.handleAiEnter = (e) => { if (e.key === "Enter") askAI(); };
+        async function askAI() {
+            const q = document.getElementById('aiQuery').value; if (!q) return;
+            const chat = document.getElementById('chatBox');
+            const loading = document.getElementById('loadingBubble');
+            const userMsg = document.createElement('div'); userMsg.className = 'chat-bubble chat-user'; userMsg.innerText = q; chat.insertBefore(userMsg, loading);
+            document.getElementById('aiQuery').value = ""; loading.style.display = 'block'; chat.scrollTop = chat.scrollHeight;
+
+            try {
+                const r = await fetch('/ask_ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: q }) });
+                const d = await r.json();
+                loading.style.display = 'none';
+                const aiMsg = document.createElement('div'); aiMsg.className = 'chat-bubble chat-ai';
+                aiMsg.innerHTML = `<div class="d-flex align-items-center mb-1 text-primary"><span class="me-2 fs-5">🕉️</span> <strong>Veda</strong></div>${converter.makeHtml(d.reply)}`;
+                chat.insertBefore(aiMsg, loading);
+            } catch (e) {
+                loading.style.display = 'none';
+                const err = document.createElement('div'); err.className = 'chat-bubble chat-ai';
+                err.innerHTML = `<div class="text-danger mb-1"><i class="fas fa-wifi me-2"></i><strong>Offline</strong></div>I am currently offline. Please check your connection.`;
+                chat.insertBefore(err, loading);
+            }
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        // --- UTILS ---
+        window.updateUserProfile = async (e) => {
+            e.preventDefault();
+            const n = document.getElementById('editName').value;
+            const p = document.getElementById('editPhone').value;
+            if (!n) return alert("Name required");
+            const user = auth.currentUser;
+            if (user) {
+                try {
+                    await updateProfile(user, { displayName: n });
+                    await setDoc(doc(db, "users", user.uid), { phone: p }, { merge: true });
+                    alert("Profile Updated!");
+                    location.reload();
+                } catch (err) {
+                    alert(err.message);
+                }
+            }
+        };
+
+        window.addNewSkill = async () => { const n = document.getElementById('newSkillName').value, l = parseInt(document.getElementById('newSkillLevel').value); if (!n || isNaN(l)) return alert("Valid input needed"); await updateDoc(doc(db, "users", auth.currentUser.uid), { skills: arrayUnion({ name: n, level: l }) }); alert("Added!"); bootstrap.Modal.getInstance(document.getElementById('skillModal')).hide(); loadUserData(auth.currentUser.uid); };
+        window.openRemoveModal = () => { const list = document.getElementById('removeListContainer'); if (!window.userSkills || window.userSkills.length === 0) return alert("No skills."); list.innerHTML = window.userSkills.map(s => `<div class="list-group-item list-group-item-dark d-flex justify-content-between align-items-center mb-2 rounded border-0"><span>${s.name}</span><button class="btn btn-sm btn-danger rounded-circle" onclick="deleteSkill('${s.name}')"><i class="fas fa-trash"></i></button></div>`).join(''); new bootstrap.Modal(document.getElementById('removeSkillModal')).show(); };
+        window.deleteSkill = async (n) => { if (!confirm("Delete?")) return; const newS = window.userSkills.filter(s => s.name !== n); await updateDoc(doc(db, "users", auth.currentUser.uid), { skills: newS }); bootstrap.Modal.getInstance(document.getElementById('removeSkillModal')).hide(); loadUserData(auth.currentUser.uid); };
+        window.downloadReport = () => { const text = document.getElementById('reportText').value; if (!text) return alert("Empty!"); const now = new Date(); const header = `Date(${now.getDate()}-${now.getMonth() + 1}-${now.getFullYear()})--Time(${now.toLocaleTimeString()})\n----------------\n\n`; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([header + text], { type: 'text/plain' })); a.download = `Report_${now.getDate()}.txt`; document.body.appendChild(a); a.click(); document.body.removeChild(a); };
+        window.saveNewLink = async () => { const t = document.getElementById('linkTitleInput').value; const u = document.getElementById('linkUrlInput').value; if (!t || !u) return alert("Please enter both title and URL"); await updateDoc(doc(db, "users", auth.currentUser.uid), { resources: arrayUnion({ title: t, url: u }) }); bootstrap.Modal.getInstance(document.getElementById('addLinkModal')).hide(); document.getElementById('linkTitleInput').value = ""; document.getElementById('linkUrlInput').value = ""; loadUserData(auth.currentUser.uid); };
+        window.deleteLink = async (title, url) => { if (!confirm(`Are you sure you want to remove "${title}"?`)) return; const user = auth.currentUser; if (user) { try { await updateDoc(doc(db, "users", user.uid), { resources: arrayRemove({ title: title, url: url }) }); loadUserData(user.uid); } catch (e) { console.error("Error deleting link:", e); alert("Could not delete link. Please try again."); } } };
+        window.openLinkModal = () => new bootstrap.Modal(document.getElementById('addLinkModal')).show();
+        function loadLibraryUI(res) { const list = document.getElementById('libraryList'); list.innerHTML = ""; if (res && res.length > 0) { res.forEach(r => { list.innerHTML += `<li class="list-group-item list-group-item-dark d-flex justify-content-between align-items-center"><a href="${r.url}" target="_blank" class="text-info text-decoration-none text-truncate" style="max-width: 80%;"><i class="fas fa-link me-2"></i>${r.title}</a><button class="btn btn-sm btn-outline-danger border-0" onclick="deleteLink('${r.title}', '${r.url}')"><i class="fas fa-trash"></i></button></li>`; }); } else { list.innerHTML = "<li class='text-secondary text-center py-3'>No saved resources yet.</li>"; } }
+
+        /* --- SIDEBAR TOGGLE --- */
+        window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('toggled'); document.body.classList.toggle('sidebar-toggled'); };
+        window.showSection = (id, btn) => {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            if (id === 'converter') return;
+            document.getElementById(id).classList.add('active-section');
+            btn.classList.add('active');
+            if (id === 'cal') renderCalendar();
+            if (id === 'projects') renderKanbanBoard();
+            if (window.innerWidth < 992) document.getElementById('sidebar').classList.remove('toggled');
+        };
+        window.openSkillModal = () => new bootstrap.Modal(document.getElementById('skillModal')).show();
+        window.setTheme = (t) => { document.body.setAttribute('data-theme', t); localStorage.setItem('theme', t); };
+        if (localStorage.getItem('theme')) setTheme(localStorage.getItem('theme'));
+    </script>
+</body>
+
+</html>
